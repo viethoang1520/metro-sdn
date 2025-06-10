@@ -1,8 +1,9 @@
 const User = require('../models/User')
 const bcrypt = require('bcrypt')
+
 const registerUser = async (req, res) => {
   try {
-    const { username, password } = req.body
+    const { username, password } = req.body // req.body req.params req.query
     const existingUser = await User.findOne({ username })
     if (existingUser) {
       return res.status(500).json({ "message": "User has been registered" })
@@ -12,7 +13,7 @@ const registerUser = async (req, res) => {
       username, password_hash
     })
     await saveUser.save()
-    return res.json({ "message": "User saved successfully" })
+    return res.status(201).json({ "message": "User created successfully" })
   } catch (error) {
     console.log(error.message)
   }
