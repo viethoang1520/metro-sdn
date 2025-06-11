@@ -35,7 +35,7 @@ const applyFreeTicket = async (req, res) => {
       }
     })
 
-    return res.json({ "message": "Apply free ticket sucessfully" })
+    return res.json({ "message": "Apply free ticket sucessfully!!" })
   } catch (error) {
     console.log(error.message)
   }
