@@ -3,11 +3,11 @@ const mongoose = require('mongoose')
 const Schedule = new mongoose.Schema({
     station: {
         type: String,
-        require: true
+        required: true
     },
     gap_time: {
         type: Number,
-        require: true
+        required: true
     }
 },{
     _id: false
@@ -15,11 +15,11 @@ const Schedule = new mongoose.Schema({
 const Route = new mongoose.Schema({
     direction: {
         type: String,
-        require: true
+        required: true
     },
     date: {
         type: Date,
-        require: true
+        required: true
     },
     start_time: {
         type: mongoose.Schema.Types.ObjectId,
@@ -28,11 +28,11 @@ const Route = new mongoose.Schema({
     },
     schedule: {
         type: Schedule,
-        require: true,
+        required: true,
     },
     status: {
         type: Number,
-        require: true
+        required: true
     }
 });
 
