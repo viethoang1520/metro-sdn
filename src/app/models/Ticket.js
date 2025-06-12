@@ -4,15 +4,15 @@ const mongoose = require('mongoose');
 const TicketType = new mongoose.Schema({
     expiry_date: {
         type: Date,
-        require: true
+        required: true
     },
     name: {
         type: String,
-        require: true
+        required: true
     },
     base_price: {
         type: Number,
-        require: true
+        required: true
     }
 },{
     _id: false
@@ -20,29 +20,29 @@ const TicketType = new mongoose.Schema({
 const Ticket = new mongoose.Schema({
     transaction_id: {
         type: mongoose.Schema.Types.ObjectId,
-        require: false
+        required: false
     },
     ticket_type: {
         type: TicketType,
-        require: false
+        required: false
     },
     start_station_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Station',
-        require: false
+        required: false
     },
     end_station_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Station',
-        require: false
+        required: false
     },
     route_price: {
         type: Number,
-        require: false
+        required: false
     },
     status: {
         type: String,
-        require: true
+        required: true
     }
 },{
     timestamps: true
