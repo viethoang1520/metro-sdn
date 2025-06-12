@@ -4,24 +4,24 @@ const Transaction = new mongoose.Schema({
     user_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        require: true
+        required: true
     },
     ticket_id: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Ticket',
-        require: true
+        required: true
     }],
     total_price: {
         type: Number,
-        require: true
+        required: true
     },
     method: {
         type: Number,
-        require: true
+        required: true
     },
     status: {
         type: String,
-        require: true
+        required: true
     },
 },{
     timestamps: true
