@@ -6,7 +6,6 @@ const loginUser = async (req, res) => {
   const user = await User.findOne({ username })
   if (!user) {
     return res.status(404).json({ "message": "User has not been registed yet" })
-
   }
 
   const validUser = await bcrypt.compare(password, user.password_hash)

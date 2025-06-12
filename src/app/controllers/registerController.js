@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt')
 
 const registerUser = async (req, res) => {
   try {
-    const { username, password } = req.body // req.body req.params req.query
+    const { username, password } = req.body 
     const existingUser = await User.findOne({ username })
     if (existingUser) {
       return res.status(500).json({ "message": "User has been registered" })
