@@ -4,11 +4,11 @@ const applyDiscountForStudent = async (req, res) => {
   try {
     const { user_id, discount, expiry_date } = req.body
     if (!mongoose.Types.ObjectId.isValid(user_id)) {
-      return res.status(500).json({ "message": "Invalid user" })
+      return res.json({ "message": "Invalid user" })
     }
     const user = await User.findById(user_id)
     if (!user) {
-      return res.status(404).json({ "message": "User has not registered yet" })
+      return res.json({ "message": "User has not registered yet" })
     }
     const updateUserDiscount = await User.updateOne({ _id: user_id }, {
       $set: {
@@ -27,11 +27,11 @@ const applyFreeTicket = async (req, res) => {
   try {
     const { user_id, user_type, expiry_date } = req.body
     if (!mongoose.Types.ObjectId.isValid(user_id)) {
-      return res.status(500).json({"message": "Invalid user"})
+      return res.json({"message": "Invalid user"})
     }
     const user = await User.findById(user_id)
     if (!user) {
-      return res.status(404).json({ "message": "User not found" })
+      return res.json({ "message": "User not found" })
     }
     await User.updateOne({ _id: user._id }, {
       $set: {
