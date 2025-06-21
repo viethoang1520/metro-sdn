@@ -5,6 +5,6 @@ const ticketController = require('../app/controllers/ticketController');
 
 router.get('/', ticketController.getAllTickets);
 router.get('/:id', ticketController.getTicketById);
-router.get('/:userId', ticketController.getAllTicketsByUserId);
-
+router.get('/user/:userId', ticketController.getAllTicketsByUserId);
+router.get('/active/:userId', ticketController.getActiveTicketsByUserId);
 module.exports = router;
