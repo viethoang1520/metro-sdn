@@ -5,16 +5,16 @@ const loginUser = async (req, res) => {
   const { username, password } = req.body
   const user = await User.findOne({ username })
   if (!user) {
-    return res.json({ "message": "User has not been registed yet" })
+    return res.json({ "error_code": 1,"message": "User has not been registed yet" })
   }
 
   const validUser = await bcrypt.compare(password, user.password_hash)
 
   if (validUser) {
     const token = jwt.sign({ id: user._id, username }, process.env.JWT_SECRET)
-    return res.json({ "message": "User logged in !!", token })
+    return res.json({ "error_code": 0,"message": "User logged in !!", token })
   } else {
-    return res.json({ "message": "Incorrect password" })
+    return res.json({ "error_code": 2,"message": "Incorrect password" })
   }
 }
 
