@@ -20,6 +20,7 @@ const TicketType = new mongoose.Schema({
 const Ticket = new mongoose.Schema({
     transaction_id: {
         type: mongoose.Schema.Types.ObjectId,
+        ref: 'Transaction',
         required: false
     },
     ticket_type: {
