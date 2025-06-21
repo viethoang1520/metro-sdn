@@ -4,26 +4,26 @@ const { v4: uuidv4 } = require('uuid');
 const SystemLog = new mongoose.Schema({
     log_id: {
         type: String,
-        require: true,
+        required: true,
         unique: true,
         default: uuidv4,
     },
     log_type: {
         type: String,
-        require: true
+        required: true
     },
     message: {
         type: String,
-        require: true
+        required: true
     },
     log_time: {
         type: Date,
-        require: true
+        required: true
     },
     user_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        require: false
+        required: false
     }
 });
 

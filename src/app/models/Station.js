@@ -3,27 +3,27 @@ const mongoose = require('mongoose');
 const Station = new mongoose.Schema({
     name: {
         type: String,
-        require: true
+        required: true
     },
     route: {
         type: String,
-        require: true
+        required: true
     },
     prev_station: {
         type: String,
-        require: true
+        required: true
     },
     next_station: {
         type: String,
-        require: true
+        required: true
     },
     distance: {
         type: Number,
-        require: true
+        required: true
     },
     status: {
         type: Number,
-        require: true
+        required: true
     }
 });
 
