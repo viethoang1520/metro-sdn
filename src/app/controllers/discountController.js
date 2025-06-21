@@ -26,6 +26,9 @@ const applyDiscountForStudent = async (req, res) => {
 const applyFreeTicket = async (req, res) => {
   try {
     const { user_id, user_type, expiry_date } = req.body
+    if (user_type == 'child' && (expiry_date == null || expiry_date == undefined)) {
+      return res.json({ "message": "Child must have expiry date" })
+    }
     if (!mongoose.Types.ObjectId.isValid(user_id)) {
       return res.json({"message": "Invalid user"})
     }
