@@ -5,18 +5,33 @@ const PassengerCategory = require('../models/PassengerCategory');
 const Transaction = require('../models/Transaction');
 
 class TicketController {
-    // tính giá vé lượt theo khoảng cách và phương thức thanh toán
-    async calculateSingleRideFare(distance, paymentMethod) {
+    constructor() {
+        this.purchaseTicket = this.purchaseTicket.bind(this);
+    }
+    // tính giá vé lượt theo số ga và phương thức thanh toán
+    async calculateSingleRideFare(stationCount, paymentMethod) {
         let basePrice;
-        if (paymentMethod === 'cash') {
-            if (distance <= 5) basePrice = 12000;
-            else if (distance <= 15) basePrice = 18000;
-            else basePrice = 20000;
+        
+        // Tính giá cơ bản theo số ga
+        if (stationCount === 1) {
+            basePrice = 7000;
+        } else if (stationCount === 2) {
+            basePrice = 9000;
+        } else if (stationCount === 3) {
+            basePrice = 11000;
         } else {
-            if (distance <= 5) basePrice = 11000;
-            else if (distance <= 15) basePrice = 17000;
-            else basePrice = 19000;
+            // Mỗi ga tiếp theo cộng thêm 2000đ
+            basePrice = 11000 + (stationCount - 3) * 2000;
         }
+
+        // Giới hạn giá tối đa là 20000đ
+        basePrice = Math.min(basePrice, 20000);
+
+        // Áp dụng giảm giá cho thanh toán điện tử
+        if (paymentMethod !== 'cash') {
+            basePrice -= 1000;
+        }
+
         return basePrice;
     }
 
@@ -37,9 +52,12 @@ class TicketController {
 
             // tìm người dùng
             const user = await User.findById(userId).populate('category_id');
+            console.log('Fetched User object:', user);
             if (!user) {
                 return res.status(404).json({ message: 'User not found' });
             }
+
+            console.log('startStationId:', startStationId, 'endStationId:', endStationId);
 
             let totalPrice = 0;
             let ticketDetails = {};
@@ -56,8 +74,9 @@ class TicketController {
                     return res.status(404).json({ message: 'Start or end station not found' });
                 }
 
-                const distance = Math.abs(startStation.distance - endStation.distance);
-                totalPrice = await this.calculateSingleRideFare(distance, paymentMethod);
+                // Tính số ga di chuyển
+                const stationCount = Math.abs(startStation.distance - endStation.distance) + 1;
+                totalPrice = await this.calculateSingleRideFare(stationCount, paymentMethod);
 
                 ticketDetails = {
                     start_station_id: startStation._id,
@@ -112,18 +131,30 @@ class TicketController {
             }
 
             // áp dụng giảm giá nếu người dùng thuộc diện ưu tiên
-            if (ticketType === 'single_ride' && user.category_id) {
+            if (user.category_id) {
                 const type = user.category_id.passenger_type;
+                console.log('User passenger type:', type);
+                console.log('User age:', user.age);
+
+                // Kiểm tra tuổi cho người cao tuổi
+                const isElderly = type === 'Người cao tuổi' && user.age >= 60;
+                console.log('Is elderly:', isElderly);
 
                 if (
-                    type === 'Người cao tuổi' || 
+                    isElderly || 
                     type === 'Trẻ em dưới 6 tuổi' || 
                     type === 'Người khuyết tật' || 
                     type === 'Người có công'
                 ) {
-                    totalPrice = 0;
-                } else {
-                    totalPrice = this.applyDiscount(totalPrice, user.category_id.discount);
+                    console.log('Applying discount logic...');
+                    // Miễn phí cho vé lượt
+                    if (ticketType === 'single_ride') {
+                        totalPrice = 0;
+                    }
+                    // Giảm giá 50% cho vé tháng
+                    else if (ticketType === 'time_based' && duration === 'month_adult') {
+                        totalPrice = 150000;
+                    }
                 }
             }
 
@@ -148,6 +179,8 @@ class TicketController {
             // lưu lại id vé trong transaction
             newTransaction.ticket_id.push(newTicket._id);
             await newTransaction.save();
+
+            console.log('Đã tạo vé:', newTicket);
 
             return res.status(201).json({ 
                 message: 'Ticket purchased successfully!', 

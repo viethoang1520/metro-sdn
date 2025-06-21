@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const TicketType = new mongoose.Schema({
     expiry_date: {
         type: Date,
-        required: true
+        required: false
     },
     name: {
         type: String,
@@ -48,4 +48,7 @@ const Ticket = new mongoose.Schema({
     timestamps: true
 });
 
+module.exports = mongoose.model('tickets', Ticket)
+module.exports = mongoose.model('tickets', Ticket)
+module.exports = mongoose.model('tickets', Ticket)
 module.exports = mongoose.model('tickets', Ticket)

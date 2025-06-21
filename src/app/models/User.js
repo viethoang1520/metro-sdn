@@ -21,7 +21,15 @@ const User = new mongoose.Schema({
     required: true,
     default: 1,
   },
-
+  age: {
+    type: Number,
+    required: false,
+  },
+  category_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'passenger_categories',
+    required: false
+  }
 }, {
   timestamps: true,
 })
