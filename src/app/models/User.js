@@ -1,4 +1,19 @@
 const mongoose = require('mongoose')
+
+const PassengerCategory = new mongoose.Schema({
+  passenger_type: {
+    type: String,
+    required: false
+  },
+  discount: {
+    type: Number,
+    required: false
+  },
+  expiry_date: {
+    type: Date,
+    required: false,
+  }
+})
 const User = new mongoose.Schema({
   username: {
     type: String,
@@ -15,6 +30,10 @@ const User = new mongoose.Schema({
   full_name: {
     type: String,
     required: false,
+  },
+  passenger_categories: {
+    type: PassengerCategory,
+    required: false
   },
   status: {
     type: Number,
