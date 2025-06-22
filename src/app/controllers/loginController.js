@@ -12,7 +12,7 @@ const loginUser = async (req, res) => {
 
   if (validUser) {
     const token = jwt.sign({ id: user._id, username }, process.env.JWT_SECRET)
-    return res.json({ "error_code": 0, "message": "Đăng nhập thành công!", token })
+    return res.json({ "error_code": 0, "message": "Đăng nhập thành công!", token, full_name: user.full_name })
   } else {
     return res.json({ "error_code": 2, "message": "Mật khẩu không đúng" })
   }
