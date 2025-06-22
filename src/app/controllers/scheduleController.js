@@ -5,7 +5,6 @@ const { generateTime, convertDateToString, getStringToday, timeToMinutes, getTim
 const getScheduleByDirection = async (req, res) => {
      try {
           const { direction } = req.params
-          console.log(direction);
           const date = getStringToday()
           const route = await Route.find({ direction, date }).populate('start_time').lean()
           if (!route || route.length === 0) {
@@ -39,8 +38,6 @@ const getScheduleByStartTime = async (req, res) => {
                     }
                }
           ]))
-
-          console.log(currentRoute[0].start_time.start_time)
 
           if (!currentRoute) {
                return res.json({ error_code: 1, msg: 'Route not found' })
