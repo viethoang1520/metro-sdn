@@ -4,9 +4,17 @@ const routes = require("./routes");
 const passport = require('passport');
 const session = require('express-session');
 const bodyParser = require("body-parser");
-const cors = require("cors");
+const cors = require('cors');
+
 
 require('dotenv').config();
+// Require all models to ensure they are registered with Mongoose
+require('./app/models/User');
+require('./app/models/PassengerCategory');
+require('./app/models/Station');
+require('./app/models/Ticket');
+require('./app/models/Transaction');
+
 // require('./app/controllers/social/FacebookController')
 // require('./app/controllers/social/GoogleController')
 const mongoDB = require('./config/db/mongoDB')
@@ -22,10 +30,12 @@ app.use(express.json());
 //--------------------------------------------------------------
 // const cookieSession = require('cookie-session')
 app.use(cors({
-  origin: process.env.CLIENT_URL,
+  origin: 'http://localhost:5173',
   methods: "GET, POST, PUT, DELETE",
   credentials: true,
 }));
+
+
 
 app.set("views", path.join(__dirname, "resources", "views"));
 app.use(express.static(path.join(__dirname, "public")));
@@ -39,6 +49,12 @@ app.use(passport.session());
 
 
 routes(app);
+
+const stationRoutes = require('./routes/station');
+app.use('/api/station', stationRoutes);
+
+const purchaseRoutes = require('./routes/purchase');
+app.use('/purchase', purchaseRoutes);
 
 const server = app.listen(process.env.PORT || 3000, () => {
   console.log(`Server is running at http://localhost:${process.env.PORT || 3000}`);

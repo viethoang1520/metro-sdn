@@ -1,0 +1,7 @@
+{
+    "userId": "68512e5c26d4cb6370bb5d7d", // Thay bằng ID của testuser bạn đã tạo trong MongoDB Compass
+    "ticketType": "single_ride",
+    "paymentMethod": "electronic",
+    "startStationId": "68512fa526d4cb6370bb5d93", // Thay bằng ID của Ga 1
+    "endStationId": "68512fcc26d4cb6370bb5d95"    // Thay bằng ID của Ga 3
+}
