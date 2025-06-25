@@ -9,14 +9,14 @@ const Transaction = new mongoose.Schema({
     ticket_id: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Ticket',
-        required: true
+        required: false
     }],
     total_price: {
         type: Number,
         required: true
     },
     method: {
-        type: Number,
+        type: String,
         required: true
     },
     status: {

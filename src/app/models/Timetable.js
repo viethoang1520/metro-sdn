@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const Timetable = new mongoose.Schema({
     start_time: {
-    type: Number,
+    type: String,
     required: true,
   },
   status: {
