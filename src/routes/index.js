@@ -6,6 +6,7 @@ const ticket = require('./ticket');
 const discount = require('./discount');
 const schedule = require('./schedule'); // giữ cái này từ develop
 
+
 function routes(app) {
     app.use('/login', login);
     app.use('/register', register);
