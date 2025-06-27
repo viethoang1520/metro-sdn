@@ -1,5 +1,18 @@
 const User = require("../models/User")
 
+const getUserInformation = async (req, res) => {
+     try {
+          const { token } = req.body
+          //ID TEST
+          const id = '68584a9318332c3c6c6ac629'
+          const user = await User.findById(id).select('-password_hash -__v -createdAt -updatedAt')
+          if (!user) return res.json({ error_code: 1, message: 'User not found' })
+          return res.json({ error_code: 0, user })
+     } catch (error) {
+          console.log(error.message)
+     }
+}
+
 const updateUserInformation = async (req, res) => {
      try {
           const { fullName, email, id } = req.body
@@ -30,10 +43,10 @@ const updateUserInformation = async (req, res) => {
 const updateUserPassword = async (req, res) => {
      try {
           console.log(req)
-          return res.json({error_code: 0, message: 'Test'})
+          return res.json({ error_code: 0, message: 'Test' })
      } catch (error) {
           console.log(error.message)
      }
 }
 
-module.exports = { updateUserInformation, updateUserPassword }
+module.exports = { getUserInformation, updateUserInformation, updateUserPassword }
