@@ -1,13 +1,14 @@
 const payOS = require('../../config/payment/PayOS')
 
 const createPayment = async (req, res) => {
-
+  const orderCode = Number(String(new Date().getTime()).slice(-6))
+  const {amount, description} = req.body
   const order = {
-    orderCode: Math.floor(Math.random() * 1000000), // Mã đơn hàng duy nhất
-    amount: 2000, // Số tiền (VNĐ)
-    description: 'Thanh toán đơn hàng mẫu',
-    returnUrl: `${process.env.SERVER_URL}/success`, // URL khi thanh toán thành công
-    cancelUrl: `${process.env.SERVER_URL}/cancel`,  // URL khi hủy thanh toán
+    orderCode, 
+    amount, 
+    description: description || 'THANH TOAN VE METRO',
+    returnUrl: `${process.env.SERVER_URL}/success`, 
+    cancelUrl: `${process.env.SERVER_URL}/cancel`, 
     items: [
       {
         name: 'Sản phẩm mẫu',
@@ -16,8 +17,6 @@ const createPayment = async (req, res) => {
       }
     ]
   };
-
-  console.log(payOS)
   try {
     console.log(order)
     const paymentLink = await payOS.createPaymentLink(order);
@@ -32,4 +31,15 @@ const createPayment = async (req, res) => {
   }
 }
 
-module.exports = { createPayment }
+
+const handleWebhook = (req, res) => {
+  try {
+    const receivedData = req.body
+    // handle saving order
+    console.log(receivedData)
+  } catch (error) {
+    console.log(error.message)
+  }
+}
+
+module.exports = { createPayment, handleWebhook }
