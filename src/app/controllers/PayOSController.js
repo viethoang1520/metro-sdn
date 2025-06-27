@@ -1,26 +1,32 @@
 const payOS = require('../../config/payment/PayOS')
+const { calculateTotalPrice } = require('../../utils/PayOSUtils')
+const Order = require('../models/Order')
 
 const createPayment = async (req, res) => {
   const orderCode = Number(String(new Date().getTime()).slice(-6))
-  const {amount, description} = req.body
+  const { items } = req.body || [{name: 'Sản phẩm mẫu', quantity: 1, price: 10000}]
+  const amount = calculateTotalPrice(items)
+  const user_id = req.id
   const order = {
     orderCode, 
     amount, 
-    description: description || 'THANH TOAN VE METRO',
+    description: `THANH TOAN VE ${orderCode}`,
     returnUrl: `${process.env.SERVER_URL}/payment/success`, 
     cancelUrl: `${process.env.SERVER_URL}/payment/cancel`, 
-    items: [
-      {
-        name: 'Sản phẩm mẫu',
-        quantity: 1,
-        price: 2000
-      }
-    ]
+    items
   };
   try {
-    console.log(order)
     const paymentLink = await payOS.createPaymentLink(order);
-    console.log("paymentLink", paymentLink)
+    const newOrder = new Order({
+      user_id,
+      order_code: orderCode,
+      order_date: new Date(),
+      description: `THANH TOAN VE ${orderCode}`,
+      items,
+      amount,
+      status: 'PENDING'
+    })
+    await newOrder.save()
     res.json({
       checkoutUrl: paymentLink.checkoutUrl,
       qrCode: paymentLink.qrCode
@@ -32,11 +38,20 @@ const createPayment = async (req, res) => {
 }
 
 
-const receiveWebhook = (req, res) => {
+const receiveWebhook = async(req, res) => {
   try {
-    const receivedData = req.body
-    // receive saving order
-    console.log(receivedData)
+    const {code, desc, data} = req.body
+    const order = await Order.findOne({ order_code: data.orderCode })
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' })
+    }
+    if (code === '00') {
+      order.status = 'PAID'
+    } else {
+      order.status = 'FAILED'
+    }
+    await order.save()
+    res.json({ message: 'Order updated successfully' })
   } catch (error) {
     console.log(error.message)
   }
