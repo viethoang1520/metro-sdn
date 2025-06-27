@@ -7,8 +7,8 @@ const createPayment = async (req, res) => {
     orderCode, 
     amount, 
     description: description || 'THANH TOAN VE METRO',
-    returnUrl: `${process.env.SERVER_URL}/success`, 
-    cancelUrl: `${process.env.SERVER_URL}/cancel`, 
+    returnUrl: `${process.env.SERVER_URL}/payment/success`, 
+    cancelUrl: `${process.env.SERVER_URL}/payment/cancel`, 
     items: [
       {
         name: 'Sản phẩm mẫu',
@@ -32,14 +32,14 @@ const createPayment = async (req, res) => {
 }
 
 
-const handleWebhook = (req, res) => {
+const receiveWebhook = (req, res) => {
   try {
     const receivedData = req.body
-    // handle saving order
+    // receive saving order
     console.log(receivedData)
   } catch (error) {
     console.log(error.message)
   }
 }
 
-module.exports = { createPayment, handleWebhook }
+module.exports = { createPayment, receiveWebhook }
