@@ -7,7 +7,7 @@ const discount = require('./discount');
 const schedule = require('./schedule'); // giữ cái này từ develop
 const payment = require('./payment'); 
 const admin = require('./admin');
-
+const user = require('./user')
 
 function routes(app) {
     app.use('/login', login);
@@ -19,6 +19,7 @@ function routes(app) {
     app.use('/schedule', schedule); // dùng ở đây nên cần import bên trên
     app.use('/payment', payment); 
     app.use('/admin', admin);
+    app.use('/user', user)
 }
 
 module.exports = routes;
