@@ -57,6 +57,11 @@ const User = new mongoose.Schema({
   cccd: {
     type: String,
     required: false
+  },
+  isAdmin: {
+    type: Boolean,
+    required: false,
+    default: false
   }
 }, {
   timestamps: true,
