@@ -69,7 +69,7 @@ const getAllTicketsByUserId = async (req, res) => {
         message: "User ID is required",
       });
     }
-    const transactions = await Transaction.find({ user_id: userId }).select(
+    const transactions = await Transaction.find({ user_id: userId, status: "PAID" }).select(
       "ticket_id"
     );
     const ticketIds = transactions.flatMap((tran) => tran.ticket_id);
