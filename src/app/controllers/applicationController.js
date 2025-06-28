@@ -25,7 +25,7 @@ exports.approveExemptionApplication = async (req, res) => {
     await app.save();
     let discount = 0;
     if (app.user_type === "STUDENT") discount = 50;
-    else discount = 90;
+    else discount = 100;
     await User.findByIdAndUpdate(app.user_id, {
       passenger_categories: {
         passenger_type: app.user_type,
