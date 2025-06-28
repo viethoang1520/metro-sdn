@@ -109,7 +109,7 @@ exports.listExemptionApplications = async (req, res) => {
     const mappedApplications = applications.map((app) => ({
       _id: app._id,
       user_id: app.user_id?._id,
-      user_name: app.user_id?.full_name,
+      full_name: app.user_id?.full_name,
       user_type: app.user_type,
       expiry_date: app.expiry_date,
       status: app.status,
