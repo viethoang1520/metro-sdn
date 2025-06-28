@@ -115,6 +115,7 @@ const getAllTicketsByUserId = async (req, res) => {
 const getActiveTicketsByUserId = async (req, res) => {
   try {
     const { userId } = req.params;
+    console.log(userId)
     if (!userId) {
       return res.status(400).json({
         httpStatus: httpStatus.BAD_REQUEST,
@@ -126,6 +127,7 @@ const getActiveTicketsByUserId = async (req, res) => {
     const transactions = await Transaction.find({ user_id: userId }).select(
       "_id"
     );
+    console.log(transactions)
     const transactionIds = transactions.map((tran) => tran._id);
 
     const tickets = await Ticket.find({
