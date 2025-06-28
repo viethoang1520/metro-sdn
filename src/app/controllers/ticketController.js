@@ -132,7 +132,7 @@ const getActiveTicketsByUserId = async (req, res) => {
       });
     }
     const now = new Date();
-    const transactions = await Transaction.find({ user_id: userId }).select(
+    const transactions = await Transaction.find({ user_id: userId, status: "PAID" }).select(
       "_id"
     );
     console.log(transactions);
