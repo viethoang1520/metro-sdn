@@ -9,6 +9,7 @@ const schedule = require('./schedule');
 const payment = require('./payment'); 
 const admin = require('./admin');
 const user = require('./user')
+const application = require('./application');
 
 function routes(app) {
     app.use('/login', login);
@@ -20,7 +21,8 @@ function routes(app) {
     app.use('/schedule', schedule); 
     app.use('/payment', payment); 
     app.use('/admin', admin);
-    app.use('/user', user)
+    app.use('/user', user);
+    app.use('/application', application);
 }
 
 module.exports = routes;
