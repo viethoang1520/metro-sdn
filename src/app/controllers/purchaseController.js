@@ -64,7 +64,7 @@ const purchaseTicketsByType = async (req, res) => {
       ticket_id: ticketIds,
       total_price: totalAmount,
       method: "online",
-      status: "completed",
+      status: "PENDING",
     });
     const savedTransaction = await newTransaction.save();
 
