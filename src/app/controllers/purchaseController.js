@@ -67,7 +67,7 @@ const purchaseTicketsByType = async (req, res) => {
     const newTransaction = new Transaction({
       user_id: userId,
       ticket_id: ticketIds,
-      total_price: totalAmount,
+      total_price: Math.round(totalAmount),
       method: "online",
       status: "PENDING",
     });
@@ -175,7 +175,7 @@ const purchaseTicketByRoute = async (req, res) => {
     const newTransaction = new Transaction({
       user_id: userId,
       ticket_id: ticketIds,
-      total_price: totalAmount,
+      total_price: Math.round(totalAmount),
       method: "online",
       status: "PENDING",
     });
