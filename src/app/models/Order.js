@@ -18,7 +18,7 @@ const Order = new mongoose.Schema({
     type: String,
     required: true,
   },
-  items: {
+  transaction: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Transaction',
     required: true,
