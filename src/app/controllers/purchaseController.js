@@ -136,7 +136,7 @@ const purchaseTicketByRoute = async (req, res) => {
       if (
         user &&
         user.passenger_categories &&
-        user.passenger_categories.discount && user.passenger_categories.status === "APPROVED"
+        user.passenger_categories.discount && user.passenger_categories == "APPROVED"
       ) {
         discount = user.passenger_categories.discount;
         route_price = route_price * (1 - discount / 100);
