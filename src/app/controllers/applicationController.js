@@ -2,6 +2,7 @@ const Ticket = require("../models/Ticket");
 const User = require("../models/User");
 const Transaction = require("../models/Transaction");
 const ExemptionApplication = require("../models/ExemptionApplication");
+const { default: status } = require("http-status");
 
 exports.approveExemptionApplication = async (req, res) => {
   try {
@@ -31,6 +32,7 @@ exports.approveExemptionApplication = async (req, res) => {
         passenger_type: app.user_type,
         discount,
         expiry_date: app.expiry_date,
+        status: "APPROVED",
       },
     });
     return res.json({
@@ -40,6 +42,7 @@ exports.approveExemptionApplication = async (req, res) => {
         discount,
         user_type: app.user_type,
         expiry_date: app.expiry_date,
+        status: "APPROVED",
       },
     });
   } catch (err) {
