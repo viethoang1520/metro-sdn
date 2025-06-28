@@ -3,8 +3,6 @@ const User = require("../models/User");
 const Transaction = require("../models/Transaction");
 const ExemptionApplication = require("../models/ExemptionApplication");
 
-
-
 exports.approveExemptionApplication = async (req, res) => {
   try {
     const { applicationId } = req.body;
@@ -106,17 +104,29 @@ exports.listExemptionApplications = async (req, res) => {
       .sort({ createdAt: -1 })
       .skip((page - 1) * pageSize)
       .limit(pageSize)
-      .populate("user_id", "full_name email");
+      .populate("user_id", "full_name");
+
+    const mappedApplications = applications.map((app) => ({
+      _id: app._id,
+      user_id: app.user_id?._id,
+      user_name: app.user_id?.full_name,
+      user_type: app.user_type,
+      expiry_date: app.expiry_date,
+      status: app.status,
+      cccd: app.cccd,
+      createdAt: app.createdAt,
+    }));
+
     res.json({
       errorCode: 0,
       data: {
-        applications,
         pagination: {
           page,
           pageSize,
           total,
           totalPages: Math.ceil(total / pageSize),
         },
+        applications: mappedApplications,
       },
       message: "Exemption applications fetched successfully",
     });
