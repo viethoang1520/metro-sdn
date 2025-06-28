@@ -1,31 +1,37 @@
 const payOS = require('../../config/payment/PayOS')
 const { calculateTotalPrice } = require('../../utils/PayOSUtils')
 const Order = require('../models/Order')
+const Transaction = require('../models/Transaction')
 
 const createPayment = async (req, res) => {
   const orderCode = Number(String(new Date().getTime()).slice(-6))
-  const { items } = req.body || [{name: 'Sản phẩm mẫu', quantity: 1, price: 10000}]
+  const { items, transaction_id } = req.body || [{ name: 'Sản phẩm mẫu', quantity: 1, price: 10000 }]
   const amount = calculateTotalPrice(items)
-  const user_id = req.id
+  const user_id = req.id || '684657ed0b397c8f35851eb0'
   const order = {
-    orderCode, 
-    amount, 
+    orderCode,
+    amount,
     description: `THANH TOAN VE ${orderCode}`,
-    returnUrl: `${process.env.SERVER_URL}/payment/success`, 
-    cancelUrl: `${process.env.SERVER_URL}/payment/cancel`, 
+    returnUrl: `${process.env.SERVER_URL}/payment/success`,
+    cancelUrl: `${process.env.SERVER_URL}/payment/cancel`,
     items
   };
   try {
+    const transaction = Transaction.findById(transaction_id)
+    if (!transaction) {
+      return res.status(404).json({ error: 'Transaction not found' })
+    }
     const paymentLink = await payOS.createPaymentLink(order);
     const newOrder = new Order({
       user_id,
       order_code: orderCode,
       order_date: new Date(),
       description: `THANH TOAN VE ${orderCode}`,
-      items,
-      amount,
+      items: transaction_id,
+      order_amount: amount,
       status: 'PENDING'
     })
+
     await newOrder.save()
     res.json({
       checkoutUrl: paymentLink.checkoutUrl,
@@ -33,27 +39,26 @@ const createPayment = async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating payment link:', error);
-    res.status(500).json({ error: 'Failed to create payment link' });
+    res.status(500).json({ error: error.message });
   }
 }
 
 
-const receiveWebhook = async(req, res) => {
+const receiveWebhook = async (req, res) => {
   try {
     const { code, desc, data } = req.body
     console.log(req.body)
-    res.status(200).json()
-    // console.log(code, desc, data)
-    // const order = await Order.findOne({ order_code: data.orderCode })
-    // if (!order) {
-    //   return res.status(404).json({ error: 'Order not found' })
-    // }
-    // if (code === '00') {
-    //   order.status = 'PAID'
-    // } else {
-    //   order.status = 'FAILED'
-    // }
-    // await order.save()
+    res.status(200).json({ message: 'Order updated successfully' })
+    const order = await Order.findOne({ order_code: data.orderCode })
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' })
+    }
+    if (code === '00') {
+      order.status = 'PAID'
+    } else {
+      order.status = 'FAILED' 
+    }
+    await order.save()
     res.json({ message: 'Order updated successfully' })
   } catch (error) {
     console.log(error.message)
