@@ -1,6 +1,7 @@
-const Ticket = require('../models/Ticket');
-const User = require('../models/User');
-const Transaction = require('../models/Transaction');
+const Ticket = require("../models/Ticket");
+const User = require("../models/User");
+const Transaction = require("../models/Transaction");
+const ExemptionApplication = require("../models/ExemptionApplication");
 
 // số vé tháng này, tổng doanh thu tháng này, tổng user
 exports.getSummary = async (req, res) => {
@@ -10,13 +11,13 @@ exports.getSummary = async (req, res) => {
 
     // số vé bán trong tháng này
     const ticketsThisMonth = await Ticket.countDocuments({
-      createdAt: { $gte: startOfMonth }
+      createdAt: { $gte: startOfMonth },
     });
 
     // tổng doanh thu tháng này (từ Transaction)
     const revenueThisMonthAgg = await Transaction.aggregate([
       { $match: { createdAt: { $gte: startOfMonth } } },
-      { $group: { _id: null, total: { $sum: "$total_price" } } }
+      { $group: { _id: null, total: { $sum: "$total_price" } } },
     ]);
     const revenueThisMonth = revenueThisMonthAgg[0]?.total || 0;
 
@@ -26,7 +27,7 @@ exports.getSummary = async (req, res) => {
     res.json({
       ticketsThisMonth,
       revenueThisMonth,
-      totalUsers
+      totalUsers,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -46,10 +47,13 @@ exports.getTicketsByMonth = async (req, res) => {
     const data = await Ticket.aggregate([
       {
         $group: {
-          _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
-          count: { $sum: 1 }
-        }
-      }
+          _id: {
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" },
+          },
+          count: { $sum: 1 },
+        },
+      },
     ]);
 
     // map data to 12 tháng
@@ -58,7 +62,7 @@ exports.getTicketsByMonth = async (req, res) => {
       return {
         year: m.year,
         month: m.month + 1,
-        count: found ? found.count : 0
+        count: found ? found.count : 0,
       };
     });
 

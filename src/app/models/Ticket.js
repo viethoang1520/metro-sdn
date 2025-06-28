@@ -50,6 +50,3 @@ const Ticket = new mongoose.Schema({
 });
 
 module.exports = mongoose.model('tickets', Ticket)
-module.exports = mongoose.model('tickets', Ticket)
-module.exports = mongoose.model('tickets', Ticket)
-module.exports = mongoose.model('tickets', Ticket)
