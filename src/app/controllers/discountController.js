@@ -5,7 +5,10 @@ const applyDiscountForStudent = async (req, res) => {
   try {
     const user_id = req.id
     const { discount, expiry_date, cccd } = req.body
-
+    const existingExemptionApplication = await ExemptionApplication.findOne({ user_id: user_id, status: 'PENDING' })
+    if (existingExemptionApplication) {
+      return res.json({ "error_code": 4, "message": "Bạn đã đăng ký một đơn trước đó" })
+    }
     if (!mongoose.Types.ObjectId.isValid(user_id)) {
       return res.json({ "error_code": 1, "message": "Người dùng không hợp lệ" })
     }
@@ -45,6 +48,10 @@ const applyFreeTicket = async (req, res) => {
   try {
     const user_id = req.id
     let { user_type, expiry_date, cccd } = req.body
+    const existingExemptionApplication = await ExemptionApplication.findOne({ user_id: user_id, status: 'PENDING' })
+    if (existingExemptionApplication) {
+      return res.json({ "error_code": 4, "message": "Bạn đã đăng ký một đơn trước đó" })
+    }
     if (user_type == 'child' && (expiry_date == null || expiry_date == undefined)) {
       return res.json({ "error_code": 2, "message": "Trẻ em phải có ngày hết hạn" })
     }
