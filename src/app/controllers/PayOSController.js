@@ -17,7 +17,7 @@ const createPayment = async (req, res) => {
     items
   };
   try {
-    const transaction = Transaction.findById(transaction_id)
+    const transaction = await Transaction.findById(transaction_id)
     if (!transaction) {
       return res.status(404).json({ error: 'Transaction not found' })
     }
@@ -27,7 +27,7 @@ const createPayment = async (req, res) => {
       order_code: orderCode,
       order_date: new Date(),
       description: `THANH TOAN VE ${orderCode}`,
-      items: transaction_id,
+      transaction: transaction._id,
       order_amount: amount,
       status: 'PENDING'
     })
@@ -48,18 +48,22 @@ const receiveWebhook = async (req, res) => {
   try {
     const { code, desc, data } = req.body
     console.log(req.body)
-    res.status(200).json({ message: 'Order updated successfully' })
     const order = await Order.findOne({ order_code: data.orderCode })
+      .populate('transaction')
+    const transaction = await Transaction.findById(order.transaction)
     if (!order) {
       return res.status(404).json({ error: 'Order not found' })
     }
     if (code === '00') {
       order.status = 'PAID'
+      transaction.status = 'PAID'
     } else {
-      order.status = 'FAILED' 
+      order.status = 'CANCELLED' 
+      transaction.status = 'CANCELLED'
     }
     await order.save()
-    res.json({ message: 'Order updated successfully' })
+    await transaction.save()
+    res.status(200).json({ message: 'Order updated successfully' })
   } catch (error) {
     console.log(error.message)
   }

@@ -19,10 +19,11 @@ const Transaction = new mongoose.Schema({
         type: String,
         required: true
     },
-    status: {
-        type: String,
-        required: true
-    },
+  status: {
+    type: String,
+    required: true,
+    enum: ['PENDING', 'PAID', 'CANCELLED'],
+  },
 },{
     timestamps: true
 });
