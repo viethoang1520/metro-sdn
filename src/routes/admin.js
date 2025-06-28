@@ -4,5 +4,8 @@ const adminController = require('../app/controllers/adminController');
 
 router.get('/stats/summary', adminController.getSummary);
 router.get('/stats/tickets-by-month', adminController.getTicketsByMonth);
+router.post('/exemption/approve', adminController.approveExemptionApplication);
+router.post('/exemption/reject', adminController.rejectExemptionApplication);
+router.get('/exemption/list', adminController.listExemptionApplications);
 
 module.exports = router; 
