@@ -62,20 +62,6 @@ exports.rejectExemptionApplication = async (req, res) => {
         data: null,
       });
     }
-    if (app.status === "REJECTED") {
-      return res.status(400).json({
-        errorCode: 1,
-        message: "Application already rejected",
-        data: null,
-      });
-    }
-    if (app.status === "APPROVED") {
-      return res.status(400).json({
-        errorCode: 1,
-        message: "Application already approved, cannot reject",
-        data: null,
-      });
-    }
     app.status = "REJECTED";
     await app.save();
     return res.json({
