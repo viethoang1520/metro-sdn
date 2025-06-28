@@ -79,12 +79,17 @@ const purchaseTicketsByType = async (req, res) => {
       { transaction_id: savedTransaction._id }
     );
 
+    const ticketsSummary = tickets.map(({ type, quantity }) => ({
+      name: ticketTypes[type]?.name || type,
+      price: ticketTypes[type]?.price || 0,
+      quantity,
+    }));
     return res.status(201).json({
       error: false,
       message: `Ticket purchase successful${discountMsg}`,
       data: {
         transaction: savedTransaction,
-        tickets: createdTickets,
+        tickets: ticketsSummary,
         discount: discount || 0,
       },
     });
@@ -99,7 +104,8 @@ const purchaseTicketsByType = async (req, res) => {
 
 const purchaseTicketByRoute = async (req, res) => {
   try {
-    const { routes, userId, start_station_id, end_station_id, quantity } = req.body;
+    const { routes, userId } =
+      req.body;
     const user = await User.findById(userId);
     let ticketsToCreate = [];
     let totalAmount = 0;
@@ -152,9 +158,6 @@ const purchaseTicketByRoute = async (req, res) => {
       ticketDetails.push({
         start_station_name: start_station.name,
         end_station_name: end_station.name,
-        distance_difference: Math.abs(start_distance - end_distance),
-        start_station_distance: start_station.distance,
-        end_station_distance: end_station.distance,
         price: route_price,
         quantity: qty,
       });
@@ -182,6 +185,15 @@ const purchaseTicketByRoute = async (req, res) => {
       { _id: { $in: ticketIds } },
       { transaction_id: savedTransaction._id }
     );
+
+    const replacedTicket = ticketDetails.map((item) => ({
+      name: `${item.start_station_name.replace(
+        /^Ga /,
+        ""
+      )} - ${item.end_station_name.replace(/^Ga /, "")}`,
+      price: item.price,
+      quantity: item.quantity,
+    }));
     return res.status(201).json({
       errorCode: 0,
       message: discount
@@ -189,8 +201,7 @@ const purchaseTicketByRoute = async (req, res) => {
         : "Route ticket purchase successful",
       data: {
         transaction: savedTransaction,
-        tickets: createdTickets,
-        ticketDetails,
+        tickets: replacedTicket,
         discount: discount || 0,
       },
     });
