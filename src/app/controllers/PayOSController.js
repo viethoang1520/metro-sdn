@@ -5,18 +5,20 @@ const Transaction = require('../models/Transaction')
 
 const createPayment = async (req, res) => {
   const orderCode = Number(String(new Date().getTime()).slice(-6))
-  const { items, transaction_id } = req.body || [{ name: 'Sản phẩm mẫu', quantity: 1, price: 10000 }]
-  const amount = calculateTotalPrice(items)
   const user_id = req.id
+  const { items, transaction_id, total_price } = req.body 
   const order = {
     orderCode,
-    amount,
+    amount: total_price,
     description: `THANH TOAN VE ${orderCode}`,
     returnUrl: `${process.env.CLIENT_URL}/payment/success`,
     cancelUrl: `${process.env.CLIENT_URL}/payment/cancel`,
     items
   };
   try {
+    if(!items || !transaction_id || !total_price){
+      return res.status(400).json({ error: 'Missing required fields' })
+    }
     const transaction = await Transaction.findById(transaction_id)
     if (!transaction) {
       return res.status(404).json({ error: 'Transaction not found' })
@@ -28,7 +30,7 @@ const createPayment = async (req, res) => {
       order_date: new Date(),
       description: `THANH TOAN VE ${orderCode}`,
       transaction: transaction._id,
-      order_amount: amount,
+      order_amount: total_price,
       status: 'PENDING'
     })
 
