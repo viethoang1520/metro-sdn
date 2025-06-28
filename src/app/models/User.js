@@ -12,6 +12,11 @@ const PassengerCategory = new mongoose.Schema({
   expiry_date: {
     type: Date,
     required: false,
+  },
+  status: {
+    type: String,
+    required: false,
+    enum: ['PENDING', 'APPROVED', 'REJECTED']
   }
 })
 const User = new mongoose.Schema({
@@ -47,6 +52,10 @@ const User = new mongoose.Schema({
   category_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'passenger_categories',
+    required: false
+  },
+  cccd: {
+    type: String,
     required: false
   }
 }, {

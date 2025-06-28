@@ -7,13 +7,13 @@ const createPayment = async (req, res) => {
   const orderCode = Number(String(new Date().getTime()).slice(-6))
   const { items, transaction_id } = req.body || [{ name: 'Sản phẩm mẫu', quantity: 1, price: 10000 }]
   const amount = calculateTotalPrice(items)
-  const user_id = req.id || '684657ed0b397c8f35851eb0'
+  const user_id = req.id
   const order = {
     orderCode,
     amount,
     description: `THANH TOAN VE ${orderCode}`,
-    returnUrl: `${process.env.SERVER_URL}/payment/success`,
-    cancelUrl: `${process.env.SERVER_URL}/payment/cancel`,
+    returnUrl: `${process.env.CLIENT_URL}/payment/success`,
+    cancelUrl: `${process.env.CLIENT_URL}/payment/cancel`,
     items
   };
   try {
