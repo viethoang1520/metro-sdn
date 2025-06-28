@@ -87,16 +87,24 @@ const getAllTicketsByUserId = async (req, res) => {
       stationMap.set(station._id.toString(), station.name);
     });
 
-    const enrichedTickets = tickets.map((ticket) => ({
-      ...ticket._doc,
-      start_station_name: ticket.start_station_id
-        ? stationMap.get(ticket.start_station_id.toString())
-        : null,
-      end_station_name: ticket.end_station_id
-        ? stationMap.get(ticket.end_station_id.toString())
-        : null,
-    }));
-
+    const enrichedTickets = tickets.map((ticket) => {
+      let ticketCategory = "";
+      if (ticket.ticket_type && ticket.ticket_type.name) {
+        ticketCategory = "Vé theo loại";
+      } else {
+        ticketCategory = "Vé theo tuyến";
+      }
+      return {
+        ...ticket._doc,
+        start_station_name: ticket.start_station_id
+          ? stationMap.get(ticket.start_station_id.toString())
+          : null,
+        end_station_name: ticket.end_station_id
+          ? stationMap.get(ticket.end_station_id.toString())
+          : null,
+        ticket_category: ticketCategory,
+      };
+    });
     res.status(200).json({
       httpStatus: httpStatus.OK,
       errorCode: ErrorCode.OK,
@@ -115,7 +123,7 @@ const getAllTicketsByUserId = async (req, res) => {
 const getActiveTicketsByUserId = async (req, res) => {
   try {
     const { userId } = req.params;
-    console.log(userId)
+    console.log(userId);
     if (!userId) {
       return res.status(400).json({
         httpStatus: httpStatus.BAD_REQUEST,
@@ -127,19 +135,19 @@ const getActiveTicketsByUserId = async (req, res) => {
     const transactions = await Transaction.find({ user_id: userId }).select(
       "_id"
     );
-    console.log(transactions)
+    console.log(transactions);
     const transactionIds = transactions.map((tran) => tran._id);
 
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const tickets = await Ticket.find({
       transaction_id: { $in: transactionIds },
       $or: [
         {
-          ticket_type: { $ne: null },
-          "ticket_type.expiry_date": { $gte: now },
+          "ticket_type.expiry_date": { $exists: true, $gte: now },
         },
         {
-          ticket_type: null,
-          status: "active",
+          "ticket_type.expiry_date": { $exists: false },
+          createdAt: { $gte: twentyFourHoursAgo },
         },
       ],
     });
@@ -155,15 +163,24 @@ const getActiveTicketsByUserId = async (req, res) => {
       stationMap.set(station._id.toString(), station.name);
     });
 
-    const enrichedTickets = tickets.map((ticket) => ({
-      ...ticket._doc,
-      start_station_name: ticket.start_station_id
-        ? stationMap.get(ticket.start_station_id.toString())
-        : null,
-      end_station_name: ticket.end_station_id
-        ? stationMap.get(ticket.end_station_id.toString())
-        : null,
-    }));
+    const enrichedTickets = tickets.map((ticket) => {
+      let ticketCategory = "";
+      if (ticket.ticket_type && ticket.ticket_type.name) {
+        ticketCategory = "Vé theo loại";
+      } else {
+        ticketCategory = "Vé theo tuyến";
+      }
+      return {
+        ...ticket._doc,
+        start_station_name: ticket.start_station_id
+          ? stationMap.get(ticket.start_station_id.toString())
+          : null,
+        end_station_name: ticket.end_station_id
+          ? stationMap.get(ticket.end_station_id.toString())
+          : null,
+        ticket_category: ticketCategory,
+      };
+    });
 
     res.status(200).json({
       httpStatus: httpStatus.OK,

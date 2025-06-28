@@ -1,7 +1,6 @@
 const Ticket = require("../models/Ticket");
 const Station = require("../models/Station");
 const User = require("../models/User");
-const PassengerCategory = require("../models/PassengerCategory");
 const Transaction = require("../models/Transaction");
 
 const ticketTypes = {
