@@ -12,8 +12,8 @@ const createPayment = async (req, res) => {
     orderCode,
     amount,
     description: `THANH TOAN VE ${orderCode}`,
-    returnUrl: `${process.env.SERVER_URL}/payment/success`,
-    cancelUrl: `${process.env.SERVER_URL}/payment/cancel`,
+    returnUrl: `${process.env.CLIENT_URL}/payment/success`,
+    cancelUrl: `${process.env.CLIENT_URL}/payment/cancel`,
     items
   };
   try {

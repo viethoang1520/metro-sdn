@@ -1,3 +1,4 @@
+const authenticateJWT = require('../middleware/AuthenticateJWT')
 const register = require('./register');
 const login = require('./login');
 const purchase = require('./purchase');
@@ -15,7 +16,7 @@ function routes(app) {
     app.use('/purchase', purchase);
     app.use('/station', station);
     app.use('/ticket', ticket);
-    app.use('/discount', discount);
+    app.use('/discount', authenticateJWT, discount);
     app.use('/schedule', schedule); // dùng ở đây nên cần import bên trên
     app.use('/payment', payment); 
     app.use('/admin', admin);
