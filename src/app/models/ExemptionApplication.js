@@ -1,7 +1,8 @@
 const mongoose = require('mongoose')
 const ExemptionApplication = new mongoose.Schema({
   user_id: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'users',
     required: true,
   },
   user_type: {

@@ -1,7 +1,7 @@
-const Ticket = require('../models/Ticket');
-const User = require('../models/User');
-const Transaction = require('../models/Transaction');
-const ExemptionApplication = require('../models/ExemptionApplication');
+const Ticket = require("../models/Ticket");
+const User = require("../models/User");
+const Transaction = require("../models/Transaction");
+const ExemptionApplication = require("../models/ExemptionApplication");
 
 // Tổng quan: số vé tháng này, tổng doanh thu tháng này, tổng user
 exports.getSummary = async (req, res) => {
@@ -11,13 +11,13 @@ exports.getSummary = async (req, res) => {
 
     // Số vé bán trong tháng này
     const ticketsThisMonth = await Ticket.countDocuments({
-      createdAt: { $gte: startOfMonth }
+      createdAt: { $gte: startOfMonth },
     });
 
     // Tổng doanh thu tháng này (từ Transaction)
     const revenueThisMonthAgg = await Transaction.aggregate([
       { $match: { createdAt: { $gte: startOfMonth } } },
-      { $group: { _id: null, total: { $sum: "$total_price" } } }
+      { $group: { _id: null, total: { $sum: "$total_price" } } },
     ]);
     const revenueThisMonth = revenueThisMonthAgg[0]?.total || 0;
 
@@ -27,7 +27,7 @@ exports.getSummary = async (req, res) => {
     res.json({
       ticketsThisMonth,
       revenueThisMonth,
-      totalUsers
+      totalUsers,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -47,19 +47,24 @@ exports.getTicketsByMonth = async (req, res) => {
     const data = await Ticket.aggregate([
       {
         $group: {
-          _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
-          count: { $sum: 1 }
-        }
-      }
+          _id: {
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" },
+          },
+          count: { $sum: 1 },
+        },
+      },
     ]);
 
     // Map data to 12 months
-    const result = months.map(m => {
-      const found = data.find(d => d._id.year === m.year && d._id.month === m.month + 1);
+    const result = months.map((m) => {
+      const found = data.find(
+        (d) => d._id.year === m.year && d._id.month === m.month + 1
+      );
       return {
         year: m.year,
         month: m.month + 1,
-        count: found ? found.count : 0
+        count: found ? found.count : 0,
       };
     });
 
@@ -69,7 +74,6 @@ exports.getTicketsByMonth = async (req, res) => {
   }
 };
 
-
 exports.approveExemptionApplication = async (req, res) => {
   try {
     const { applicationId } = req.body;
@@ -77,21 +81,21 @@ exports.approveExemptionApplication = async (req, res) => {
     if (!app) {
       return res.status(404).json({
         errorCode: 1,
-        message: 'Exemption application not found',
+        message: "Exemption application not found",
         data: null,
       });
     }
-    if (app.status === 'APPROVED') {
+    if (app.status === "APPROVED") {
       return res.status(400).json({
         errorCode: 1,
-        message: 'Application already approved',
+        message: "Application already approved",
         data: null,
       });
     }
-    app.status = 'APPROVED';
+    app.status = "APPROVED";
     await app.save();
     let discount = 0;
-    if (app.user_type === 'STUDENT') discount = 50;
+    if (app.user_type === "STUDENT") discount = 50;
     else discount = 100;
     await User.findByIdAndUpdate(app.user_id, {
       passenger_categories: {
@@ -102,14 +106,94 @@ exports.approveExemptionApplication = async (req, res) => {
     });
     return res.json({
       errorCode: 0,
-      message: 'Application approved and user updated',
-      data: { discount, user_type: app.user_type, expiry_date: app.expiry_date },
+      message: "Application approved and user updated",
+      data: {
+        discount,
+        user_type: app.user_type,
+        expiry_date: app.expiry_date,
+      },
     });
   } catch (err) {
     res.status(500).json({
       errorCode: 1,
-      message: err.message || 'An error occurred while approving application',
+      message: err.message || "An error occurred while approving application",
       data: null,
+    });
+  }
+};
+
+exports.rejectExemptionApplication = async (req, res) => {
+  try {
+    const { applicationId } = req.body;
+    const app = await ExemptionApplication.findById(applicationId);
+    if (!app) {
+      return res.status(404).json({
+        errorCode: 1,
+        message: "Exemption application not found",
+        data: null,
+      });
+    }
+    if (app.status === "REJECTED") {
+      return res.status(400).json({
+        errorCode: 1,
+        message: "Application already rejected",
+        data: null,
+      });
+    }
+    if (app.status === "APPROVED") {
+      return res.status(400).json({
+        errorCode: 1,
+        message: "Application already approved, cannot reject",
+        data: null,
+      });
+    }
+    app.status = "REJECTED";
+    await app.save();
+    return res.json({
+      errorCode: 0,
+      message: "Application rejected successfully",
+      data: { applicationId },
+    });
+  } catch (err) {
+    res.status(500).json({
+      errorCode: 1,
+      message: err.message || "An error occurred while rejecting application",
+      data: null,
+    });
+  }
+};
+
+exports.listExemptionApplications = async (req, res) => {
+  try {
+    let { page = 1, pageSize = 10, status } = req.query;
+    page = parseInt(page);
+    pageSize = parseInt(pageSize);
+    const filter = {};
+    if (status) filter.status = status;
+    const total = await ExemptionApplication.countDocuments(filter);
+    const applications = await ExemptionApplication.find(filter)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * pageSize)
+      .limit(pageSize)
+      .populate("user_id", "full_name email");
+    res.json({
+      errorCode: 0,
+      data: {
+        applications,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.ceil(total / pageSize),
+        },
+      },
+      message: "Exemption applications fetched successfully",
+    });
+  } catch (err) {
+    res.status(500).json({
+      errorCode: 1,
+      data: null,
+      message: err.message || "An error occurred while fetching applications",
     });
   }
 };
