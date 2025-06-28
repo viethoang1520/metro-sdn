@@ -2,8 +2,7 @@ const mongoose = require('mongoose');
 
 async function connect() {
   try {
-    console.log(process.env.MONGO_URI);
-    await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/metro-sdn');
+    await mongoose.connect(process.env.MONGO_URI);
     console.log('MongoDB has been connected successfully');
   } catch (error) {
     console.log(error.message);
