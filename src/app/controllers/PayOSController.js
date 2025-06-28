@@ -40,17 +40,20 @@ const createPayment = async (req, res) => {
 
 const receiveWebhook = async(req, res) => {
   try {
-    const {code, desc, data} = req.body
-    const order = await Order.findOne({ order_code: data.orderCode })
-    if (!order) {
-      return res.status(404).json({ error: 'Order not found' })
-    }
-    if (code === '00') {
-      order.status = 'PAID'
-    } else {
-      order.status = 'FAILED'
-    }
-    await order.save()
+    const { code, desc, data } = req.body
+    console.log(req.body)
+    res.status(200).json()
+    // console.log(code, desc, data)
+    // const order = await Order.findOne({ order_code: data.orderCode })
+    // if (!order) {
+    //   return res.status(404).json({ error: 'Order not found' })
+    // }
+    // if (code === '00') {
+    //   order.status = 'PAID'
+    // } else {
+    //   order.status = 'FAILED'
+    // }
+    // await order.save()
     res.json({ message: 'Order updated successfully' })
   } catch (error) {
     console.log(error.message)
