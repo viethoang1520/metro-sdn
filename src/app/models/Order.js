@@ -20,7 +20,7 @@ const Order = new mongoose.Schema({
   },
   transaction: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Transaction',
+    ref: 'transactions',
     required: true,
   },
   status: {
