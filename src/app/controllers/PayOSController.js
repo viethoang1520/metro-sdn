@@ -71,6 +71,7 @@ const receiveWebhook = async (req, res) => {
     console.log(req.body)
     const order = await Order.findOne({ order_code: data.orderCode })
       .populate('transaction')
+    console.log(order)
     const transaction = await Transaction.findById(order.transaction)
     if (!order) {
       return res.status(404).json({ error: 'Order not found' })
