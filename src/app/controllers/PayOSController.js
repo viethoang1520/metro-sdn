@@ -32,9 +32,11 @@ const createPayment = async (req, res) => {
         description: `THANH TOAN VE ${orderCode}`,
         transaction: transaction._id,
         order_amount: total_price,
-        status: 'PENDING'
+        status: 'PAID'
       })
+      transaction.status = 'PAID'
       await newOrder.save()
+      await transaction.save()
       res.json({
         checkoutUrl: `${process.env.CLIENT_URL}/payment/success?code=00&cancel=false&status=PAID&order_code=${orderCode}`,
         qrCode: ``
