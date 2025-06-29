@@ -69,14 +69,22 @@ const getAllTicketsByUserId = async (req, res) => {
         message: "User ID is required",
       });
     }
-    const transactions = await Transaction.find({ user_id: userId, status: "PAID" }).select(
-      "ticket_id"
-    );
+    const transactions = await Transaction.find({
+      user_id: userId,
+      status: "PAID",
+    })
+      .select("ticket_id createdAt")
+      .sort({ createdAt: -1 });
     const ticketIds = transactions.flatMap((tran) => tran.ticket_id);
 
     const tickets = await Ticket.find({ _id: { $in: ticketIds } });
+    const ticketMap = new Map();
+    tickets.forEach((ticket) => ticketMap.set(ticket._id.toString(), ticket));
+    const orderedTickets = ticketIds
+      .map((id) => ticketMap.get(id.toString()))
+      .filter(Boolean);
 
-    const stationIds = tickets
+    const stationIds = orderedTickets
       .flatMap((ticket) => [ticket.start_station_id, ticket.end_station_id])
       .filter((id) => id);
 
@@ -87,7 +95,7 @@ const getAllTicketsByUserId = async (req, res) => {
       stationMap.set(station._id.toString(), station.name);
     });
 
-    const enrichedTickets = tickets.map((ticket) => {
+    const enrichedTickets = orderedTickets.map((ticket) => {
       let ticketCategory = "";
       if (ticket.ticket_type && ticket.ticket_type.name) {
         ticketCategory = "Vé theo loại";
@@ -132,9 +140,10 @@ const getActiveTicketsByUserId = async (req, res) => {
       });
     }
     const now = new Date();
-    const transactions = await Transaction.find({ user_id: userId, status: "PAID" }).select(
-      "_id"
-    );
+    const transactions = await Transaction.find({
+      user_id: userId,
+      status: "PAID",
+    }).select("_id");
     console.log(transactions);
     const transactionIds = transactions.map((tran) => tran._id);
 
