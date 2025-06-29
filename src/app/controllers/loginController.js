@@ -8,11 +8,12 @@ const loginUser = async (req, res) => {
     return res.json({ "error_code": 1, "message": "Người dùng chưa được đăng ký" })
   }
 
+  
   const validUser = await bcrypt.compare(password, user.password_hash)
 
   if (validUser) {
     const token = jwt.sign({ id: user._id, username }, process.env.JWT_SECRET)
-    return res.json({ "error_code": 0, "message": "Đăng nhập thành công!", token, full_name: user.full_name })
+    return res.json({ "error_code": 0, "message": "Đăng nhập thành công!", token, "isAdmin": user.isAdmin })
   } else {
     return res.json({ "error_code": 2, "message": "Mật khẩu không đúng" })
   }

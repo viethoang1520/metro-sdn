@@ -2,8 +2,7 @@ const Ticket = require("../models/Ticket");
 const User = require("../models/User");
 const Transaction = require("../models/Transaction");
 const ExemptionApplication = require("../models/ExemptionApplication");
-
-
+const { default: status } = require("http-status");
 
 exports.approveExemptionApplication = async (req, res) => {
   try {
@@ -33,6 +32,7 @@ exports.approveExemptionApplication = async (req, res) => {
         passenger_type: app.user_type,
         discount,
         expiry_date: app.expiry_date,
+        status: "APPROVED",
       },
     });
     return res.json({
@@ -42,6 +42,7 @@ exports.approveExemptionApplication = async (req, res) => {
         discount,
         user_type: app.user_type,
         expiry_date: app.expiry_date,
+        status: "APPROVED",
       },
     });
   } catch (err) {
@@ -61,20 +62,6 @@ exports.rejectExemptionApplication = async (req, res) => {
       return res.status(404).json({
         errorCode: 1,
         message: "Exemption application not found",
-        data: null,
-      });
-    }
-    if (app.status === "REJECTED") {
-      return res.status(400).json({
-        errorCode: 1,
-        message: "Application already rejected",
-        data: null,
-      });
-    }
-    if (app.status === "APPROVED") {
-      return res.status(400).json({
-        errorCode: 1,
-        message: "Application already approved, cannot reject",
         data: null,
       });
     }
@@ -106,17 +93,29 @@ exports.listExemptionApplications = async (req, res) => {
       .sort({ createdAt: -1 })
       .skip((page - 1) * pageSize)
       .limit(pageSize)
-      .populate("user_id", "full_name email");
+      .populate("user_id", "full_name");
+
+    const mappedApplications = applications.map((app) => ({
+      _id: app._id,
+      user_id: app.user_id?._id,
+      full_name: app.user_id?.full_name,
+      user_type: app.user_type,
+      expiry_date: app.expiry_date,
+      status: app.status,
+      cccd: app.cccd,
+      createdAt: app.createdAt,
+    }));
+
     res.json({
       errorCode: 0,
       data: {
-        applications,
         pagination: {
           page,
           pageSize,
           total,
           totalPages: Math.ceil(total / pageSize),
         },
+        applications: mappedApplications,
       },
       message: "Exemption applications fetched successfully",
     });

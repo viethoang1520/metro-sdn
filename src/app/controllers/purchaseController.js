@@ -27,7 +27,7 @@ const purchaseTicketsByType = async (req, res) => {
     if (
       user &&
       user.passenger_categories &&
-      user.passenger_categories.discount
+      user.passenger_categories.discount&& user.passenger_categories.status == "APPROVED"  
     ) {
       discount = user.passenger_categories.discount;
       discountMsg = ` (discount ${discount}% applied)`;
@@ -67,7 +67,7 @@ const purchaseTicketsByType = async (req, res) => {
     const newTransaction = new Transaction({
       user_id: userId,
       ticket_id: ticketIds,
-      total_price: totalAmount,
+      total_price: Math.round(totalAmount),
       method: "online",
       status: "PENDING",
     });
@@ -136,7 +136,7 @@ const purchaseTicketByRoute = async (req, res) => {
       if (
         user &&
         user.passenger_categories &&
-        user.passenger_categories.discount
+        user.passenger_categories.discount && user.passenger_categories.status == "APPROVED"
       ) {
         discount = user.passenger_categories.discount;
         route_price = route_price * (1 - discount / 100);
@@ -175,7 +175,7 @@ const purchaseTicketByRoute = async (req, res) => {
     const newTransaction = new Transaction({
       user_id: userId,
       ticket_id: ticketIds,
-      total_price: totalAmount,
+      total_price: Math.round(totalAmount),
       method: "online",
       status: "PENDING",
     });
