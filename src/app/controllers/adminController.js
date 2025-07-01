@@ -8,9 +8,10 @@ exports.getSummary = async (req, res) => {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    // số vé bán trong tháng này
+    // số vé bán trong tháng này (chỉ tính vé đã thanh toán)
     const ticketsThisMonth = await Ticket.countDocuments({
-      createdAt: { $gte: startOfMonth }
+      createdAt: { $gte: startOfMonth },
+      status: 'paid'
     });
 
     // tổng doanh thu tháng này (từ Transaction)
@@ -85,14 +86,15 @@ exports.getTodayRevenue = async (req, res) => {
   }
 };
 
-// tổng vé đã bán hôm nay
+// tổng vé đã bán hôm nay (chỉ tính vé đã thanh toán)
 exports.getTodayTickets = async (req, res) => {
   try {
     const now = new Date();
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
     const ticketsToday = await Ticket.countDocuments({
-      createdAt: { $gte: startOfDay, $lt: endOfDay }
+      createdAt: { $gte: startOfDay, $lt: endOfDay },
+      status: 'paid'
     });
     res.json({ ticketsToday });
   } catch (err) {
@@ -100,16 +102,18 @@ exports.getTodayTickets = async (req, res) => {
   }
 };
 
-// lượng hành khách hôm nay (giả sử mỗi vé là 1 hành khách)
+// lượng hành khách hôm nay (mỗi user chỉ tính 1 lần, dựa vào Transaction status='PAID')
 exports.getTodayPassengers = async (req, res) => {
   try {
     const now = new Date();
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-    const passengersToday = await Ticket.countDocuments({
-      createdAt: { $gte: startOfDay, $lt: endOfDay }
+    // Lấy user_id duy nhất từ các giao dịch đã thanh toán trong ngày
+    const uniqueUsers = await Transaction.distinct('user_id', {
+      createdAt: { $gte: startOfDay, $lt: endOfDay },
+      status: 'PAID'
     });
-    res.json({ passengersToday });
+    res.json({ passengersToday: uniqueUsers.length });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
