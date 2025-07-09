@@ -57,6 +57,76 @@ const getScheduleByStartTime = async (req, res) => {
      }
 }
 
+const getListTimetables = async (req, res) => {
+     try {
+          const timetables = await Timetable.find({})
+          if (!timetables) return res.json({ error_code: 1, message: 'Không tìm thấy dữ liệu.' })
+          return res.json({ error_code: 0, data: [...timetables] })
+     } catch (error) {
+          console.log(error.message)
+          return res.json({ error_code: 1, message: 'Server error.' })
+     }
+}
+
+const deleteTimetableById = async (req, res) => {
+     try {
+          const { id } = req.params
+          const timetable = await Timetable.find({ _id: id })
+          if (!timetable) return res.json({ error_code: 1, message: 'Không tìm thấy.' })
+          await Timetable.updateOne(
+               { _id: id },
+               { $set: { status: 0 } }
+          )
+          return res.json({ error_code: 0, message: 'Cập nhật thành công.' })
+     } catch (error) {
+          console.log(error.message)
+          return res.json({ error_code: 1, message: 'Server error.' })
+     }
+}
+
+const restoreTimetableById = async (req, res) => {
+     try {
+          const { id } = req.params
+          const timetable = await Timetable.find({ _id: id })
+          if (!timetable) return res.json({ error_code: 1, message: 'Không tìm thấy.' })
+          await Timetable.updateOne(
+               { _id: id },
+               { $set: { status: 1 } }
+          )
+          return res.json({ error_code: 0, message: 'Cập nhật thành công.' })
+     } catch (error) {
+          console.log(error.message)
+     }
+}
+
+const findTimetableById = async (req, res) => {
+     try {
+          const { id } = req.params
+          const timetable = await Timetable.findOne({ _id: id })
+          if (!timetable) return res.json({ error_code: 1, message: 'Không tìm thấy.' })
+          return res.json({ error_code: 0, data: timetable })
+     } catch (error) {
+          console.log(error.message)
+          return res.json({ error_code: 1, message: 'Server error' })
+     }
+}
+
+const updateTimetableById = async (req, res) => {
+     try {
+          const { id: _id } = req.params
+          const { start_time } = req.body
+          const timetable = await Timetable.find({ _id })
+          if (!timetable) return res.json({ error_code: 1, message: 'Không tìm thấy.' })
+          await Timetable.updateOne(
+               { _id: id },
+               { $set: { start_time } }
+          )
+          return res.json({ error_code: 0, message: 'Cập nhật thành công.' })
+     } catch (error) {
+          console.log(error.message)
+     }
+}
+
 const createBulkRoutes = async (direction) => {
      const today = new Date();
      const date = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`
@@ -123,4 +193,14 @@ const createBulkTimetables = async (req, res) => {
      }
 }
 
-module.exports = { getScheduleByDirection, createBulkRoutes, createBulkTimetables, getScheduleByStartTime }
+module.exports = {
+     getScheduleByDirection,
+     createBulkRoutes,
+     createBulkTimetables,
+     getScheduleByStartTime,
+     getListTimetables,
+     findTimetableById,
+     deleteTimetableById,
+     restoreTimetableById,
+     updateTimetableById
+}
