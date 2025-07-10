@@ -233,7 +233,8 @@ const checkIn = async (req, res) => {
         message: "Ticket is not active or already checked in",
       });
     };
-    if(ticket.start_station_id !== stationId) {
+    console.log(ticket.start_station_id, stationId);
+    if(ticket.start_station_id.toString() !== stationId) {
       return res.status(400).json({
         httpStatus: httpStatus.BAD_REQUEST,
         errorCode: ErrorCode.VALIDATION_ERROR,
@@ -283,7 +284,7 @@ const checkOut = async (req, res) => {
         message: "Ticket is not checked in or already checked out",
       });
     };
-    if(ticket.end_station_id !== stationId) {
+    if(ticket.end_station_id.toString() !== stationId) {
       return res.status(400).json({
         httpStatus: httpStatus.BAD_REQUEST,
         errorCode: ErrorCode.VALIDATION_ERROR,
