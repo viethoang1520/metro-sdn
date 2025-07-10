@@ -210,7 +210,7 @@ const getActiveTicketsByUserId = async (req, res) => {
 
 const checkIn = async (req, res) => {
   try {
-    const { ticketId } = req.body;
+    const { ticketId, stationId } = req.body;
     if (!ticketId) {
       return res.status(400).json({
         httpStatus: httpStatus.BAD_REQUEST,
@@ -231,7 +231,15 @@ const checkIn = async (req, res) => {
         httpStatus: httpStatus.BAD_REQUEST,
         errorCode: ErrorCode.VALIDATION_ERROR,
         message: "Ticket is not active or already checked in",
-      })
+      });
+    };
+    console.log(ticket.start_station_id, stationId);
+    if(ticket.start_station_id.toString() !== stationId) {
+      return res.status(400).json({
+        httpStatus: httpStatus.BAD_REQUEST,
+        errorCode: ErrorCode.VALIDATION_ERROR,
+        message: "Ticket start station does not match the check-in station",
+      });
     };
     ticket.status = "CHECKED_IN";
     await ticket.save();
@@ -253,7 +261,7 @@ const checkIn = async (req, res) => {
 
 const checkOut = async (req, res) => {
   try {
-    const { ticketId } = req.body;
+    const { ticketId, stationId } = req.body;
     if (!ticketId) {
       return res.status(400).json({
         httpStatus: httpStatus.BAD_REQUEST,
@@ -274,6 +282,13 @@ const checkOut = async (req, res) => {
         httpStatus: httpStatus.BAD_REQUEST,
         errorCode: ErrorCode.VALIDATION_ERROR,
         message: "Ticket is not checked in or already checked out",
+      });
+    };
+    if(ticket.end_station_id.toString() !== stationId) {
+      return res.status(400).json({
+        httpStatus: httpStatus.BAD_REQUEST,
+        errorCode: ErrorCode.VALIDATION_ERROR,
+        message: "Ticket end station does not match the check-out station",
       });
     };
     ticket.status = "CHECKED_OUT";
