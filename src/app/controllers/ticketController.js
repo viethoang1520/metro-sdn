@@ -3,7 +3,7 @@ const Ticket = require("../models/Ticket");
 const Transaction = require("../models/Transaction");
 const Station = require("../models/Station");
 const ErrorCode = {
-  OK: "OK",
+  OK: "SUCCESS",
   INTERNAL_SERVER_ERROR: "INTERNAL_SERVER_ERROR",
   VALIDATION_ERROR: "VALIDATION_ERROR",
   TICKET_NOT_FOUND: "TICKET_NOT_FOUND",
@@ -150,6 +150,7 @@ const getActiveTicketsByUserId = async (req, res) => {
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const tickets = await Ticket.find({
       transaction_id: { $in: transactionIds },
+      status: { $in: ["ACTIVE"] },
       $or: [
         {
           "ticket_type.expiry_date": { $exists: true, $gte: now },
@@ -206,9 +207,83 @@ const getActiveTicketsByUserId = async (req, res) => {
   }
 };
 
+
+const checkIn = async (req, res) => {
+  try {
+    const { ticketId } = req.body;
+    if (!ticketId) {
+      return res.status(400).json({
+        httpStatus: httpStatus.BAD_REQUEST,
+        errorCode: ErrorCode.VALIDATION_ERROR,
+        message: "ticketId is required",
+      });
+    }
+    const ticket = await Ticket.findById(ticketId);
+    if (!ticket) {
+      return res.status(404).json({
+        httpStatus: httpStatus.NOT_FOUND,
+        errorCode: ErrorCode.TICKET_NOT_FOUND,
+        message: "Ticket not found",
+      });
+    }
+    ticket.status = "CHECKED_IN";
+    await ticket.save();
+    res.status(200).json({
+      httpStatus: httpStatus.OK,
+      errorCode: ErrorCode.OK,
+      message: "Check-in successful",
+      data: ticket,
+    });
+  } catch (error) {
+    res.status(500).json({
+      httpStatus: httpStatus.INTERNAL_SERVER_ERROR,
+      errorCode: ErrorCode.INTERNAL_SERVER_ERROR,
+      message: error.message,
+    });
+  }
+};
+
+
+const checkOut = async (req, res) => {
+  try {
+    const { ticketId } = req.body;
+    if (!ticketId) {
+      return res.status(400).json({
+        httpStatus: httpStatus.BAD_REQUEST,
+        errorCode: ErrorCode.VALIDATION_ERROR,
+        message: "ticketId is required",
+      });
+    }
+    const ticket = await Ticket.findById(ticketId);
+    if (!ticket) {
+      return res.status(404).json({
+        httpStatus: httpStatus.NOT_FOUND,
+        errorCode: ErrorCode.TICKET_NOT_FOUND,
+        message: "Ticket not found",
+      });
+    }
+    ticket.status = "CHECKED_OUT";
+    await ticket.save();
+    res.status(200).json({
+      httpStatus: httpStatus.OK,
+      errorCode: ErrorCode.OK,
+      message: "Check-out successful",
+      data: ticket,
+    });
+  } catch (error) {
+    res.status(500).json({
+      httpStatus: httpStatus.INTERNAL_SERVER_ERROR,
+      errorCode: ErrorCode.INTERNAL_SERVER_ERROR,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   getAllTickets,
   getTicketById,
   getAllTicketsByUserId,
   getActiveTicketsByUserId,
+  checkIn,
+  checkOut,
 };
