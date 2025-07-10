@@ -217,7 +217,7 @@ const checkIn = async (req, res) => {
         errorCode: ErrorCode.VALIDATION_ERROR,
         message: "ticketId is required",
       });
-    }
+    };
     const ticket = await Ticket.findById(ticketId);
     if (!ticket) {
       return res.status(404).json({
@@ -225,7 +225,14 @@ const checkIn = async (req, res) => {
         errorCode: ErrorCode.TICKET_NOT_FOUND,
         message: "Ticket not found",
       });
-    }
+    };
+    if (ticket.status !== "ACTIVE") {
+      return res.status(400).json({
+        httpStatus: httpStatus.BAD_REQUEST,
+        errorCode: ErrorCode.VALIDATION_ERROR,
+        message: "Ticket is not active or already checked in",
+      })
+    };
     ticket.status = "CHECKED_IN";
     await ticket.save();
     res.status(200).json({
@@ -261,7 +268,14 @@ const checkOut = async (req, res) => {
         errorCode: ErrorCode.TICKET_NOT_FOUND,
         message: "Ticket not found",
       });
-    }
+    };
+    if (ticket.status !== "CHECKED_IN") {
+      return res.status(400).json({
+        httpStatus: httpStatus.BAD_REQUEST,
+        errorCode: ErrorCode.VALIDATION_ERROR,
+        message: "Ticket is not checked in or already checked out",
+      });
+    };
     ticket.status = "CHECKED_OUT";
     await ticket.save();
     res.status(200).json({
