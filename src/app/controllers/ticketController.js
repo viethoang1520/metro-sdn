@@ -212,45 +212,40 @@ const checkIn = async (req, res) => {
   try {
     const { ticketId, stationId } = req.body;
     if (!ticketId) {
-      return res.status(400).json({
-        httpStatus: httpStatus.BAD_REQUEST,
+      return res.json({
         errorCode: ErrorCode.VALIDATION_ERROR,
         message: "ticketId is required",
       });
     };
     const ticket = await Ticket.findById(ticketId);
     if (!ticket) {
-      return res.status(404).json({
-        httpStatus: httpStatus.NOT_FOUND,
+      return res.json({
         errorCode: ErrorCode.TICKET_NOT_FOUND,
         message: "Ticket not found",
       });
     };
     if (ticket.status !== "ACTIVE") {
-      return res.status(400).json({
-        httpStatus: httpStatus.BAD_REQUEST,
+      return res.json({
         errorCode: ErrorCode.VALIDATION_ERROR,
         message: "Ticket is not active or already checked in",
       });
     };
-    console.log(ticket.start_station_id, stationId);
     if(ticket.start_station_id.toString() !== stationId) {
-      return res.status(400).json({
-        httpStatus: httpStatus.BAD_REQUEST,
+      return res.json({
         errorCode: ErrorCode.VALIDATION_ERROR,
         message: "Ticket start station does not match the check-in station",
       });
     };
     ticket.status = "CHECKED_IN";
     await ticket.save();
-    res.status(200).json({
+    res.json({
       httpStatus: httpStatus.OK,
       errorCode: ErrorCode.OK,
       message: "Check-in successful",
       data: ticket,
     });
   } catch (error) {
-    res.status(500).json({
+    res.json({
       httpStatus: httpStatus.INTERNAL_SERVER_ERROR,
       errorCode: ErrorCode.INTERNAL_SERVER_ERROR,
       message: error.message,
@@ -263,30 +258,26 @@ const checkOut = async (req, res) => {
   try {
     const { ticketId, stationId } = req.body;
     if (!ticketId) {
-      return res.status(400).json({
-        httpStatus: httpStatus.BAD_REQUEST,
+      return res.json({
         errorCode: ErrorCode.VALIDATION_ERROR,
         message: "ticketId is required",
       });
     }
     const ticket = await Ticket.findById(ticketId);
     if (!ticket) {
-      return res.status(404).json({
-        httpStatus: httpStatus.NOT_FOUND,
+      return res.json({
         errorCode: ErrorCode.TICKET_NOT_FOUND,
         message: "Ticket not found",
       });
     };
     if (ticket.status !== "CHECKED_IN") {
-      return res.status(400).json({
-        httpStatus: httpStatus.BAD_REQUEST,
+      return res.json({
         errorCode: ErrorCode.VALIDATION_ERROR,
         message: "Ticket is not checked in or already checked out",
       });
     };
     if(ticket.end_station_id.toString() !== stationId) {
-      return res.status(400).json({
-        httpStatus: httpStatus.BAD_REQUEST,
+      return res.json({
         errorCode: ErrorCode.VALIDATION_ERROR,
         message: "Ticket end station does not match the check-out station",
       });
