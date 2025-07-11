@@ -16,11 +16,13 @@ exports.getTodayAndTotalSummary = async (req, res) => {
     ]);
     const totalRevenue = totalRevenueAgg[0]?.total || 0;
 
-    // tổng vé đã bán hôm nay (Ticket status='paid')
-    const ticketsToday = await Ticket.countDocuments({
-      createdAt: { $gte: startOfDay, $lt: endOfDay },
-      status: 'paid'
-    });
+    // tổng vé đã bán hôm nay (dựa vào transaction status='PAID')
+    const ticketsTodayAgg = await Transaction.aggregate([
+      { $match: { createdAt: { $gte: startOfDay, $lt: endOfDay }, status: 'PAID' } },
+      { $project: { ticketCount: { $size: "$ticket_id" } } },
+      { $group: { _id: null, total: { $sum: "$ticketCount" } } }
+    ]);
+    const ticketsToday = ticketsTodayAgg[0]?.total || 0;
 
     // toanh thu hôm nay (transaction status='PAID')
     const revenueTodayAgg = await Transaction.aggregate([
@@ -71,13 +73,20 @@ exports.getTodayAndTotalSummary = async (req, res) => {
     });
 
     // hành khách theo ga hôm nay (ticket status='paid', group by start_station_id)
+    const Station = require('../models/Station');
+    const allStations = await Station.find({}, '_id name');
     const passengersByStationAgg = await Ticket.aggregate([
       { $match: { createdAt: { $gte: startOfDay, $lt: endOfDay }, status: 'paid' } },
       { $group: { _id: "$start_station_id", count: { $sum: 1 } } }
     ]);
-    const passengersByStationToday = passengersByStationAgg.map(item => ({
-      start_station_id: item._id,
-      count: item.count
+    const countMap = {};
+    passengersByStationAgg.forEach(item => {
+      countMap[item._id.toString()] = item.count;
+    });
+    const passengersByStationToday = allStations.map(station => ({
+      start_station_id: station._id,
+      name: station.name,
+      count: countMap[station._id.toString()] || 0
     }));
 
     // top 5 tuyến đường có doanh thu cao nhất trong 7 ngày qua (lấy từ transactions)
@@ -108,7 +117,6 @@ exports.getTodayAndTotalSummary = async (req, res) => {
       { $limit: 5 }
     ]);
     // lấy tên ga cho từng tuyến
-    const Station = require('../models/Station');
     const stationMap = {};
     const stationIds = [
       ...new Set(topRoutesAgg.flatMap(r => [r._id.start.toString(), r._id.end.toString()]))
@@ -128,7 +136,57 @@ exports.getTodayAndTotalSummary = async (req, res) => {
       passengersToday,
       revenueLast7Days,
       passengersByStationToday,
-      topRoutesByRevenue 
+      topRoutesByRevenue,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// API: Lấy trạng thái các ga theo thời gian thực trong ngày hôm nay
+exports.getStationStatusToday = async (req, res) => {
+  try {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+
+    // lấy tất cả tickets trong ngày hôm nay có start_station_id và transaction_id
+    const tickets = await Ticket.find({
+      createdAt: { $gte: startOfDay, $lt: endOfDay },
+      start_station_id: { $ne: null },
+      transaction_id: { $ne: null }
+    }, 'start_station_id transaction_id');
+
+    // lấy tất cả transaction_id từ tickets
+    const transactionIds = tickets.map(t => t.transaction_id);
+    // lấy các transaction status 'PAID'
+    const paidTransactions = await Transaction.find({
+      _id: { $in: transactionIds },
+      status: 'PAID'
+    }, '_id');
+    const paidTransactionIds = new Set(paidTransactions.map(tr => tr._id.toString()));
+
+    // Lọc tickets có transaction_id thuộc paidTransactionIds
+    const paidTickets = tickets.filter(t => paidTransactionIds.has(t.transaction_id.toString()));
+
+    // Đếm số lượng vé theo start_station_id
+    const stationCountMap = {};
+    paidTickets.forEach(t => {
+      const key = t.start_station_id.toString();
+      stationCountMap[key] = (stationCountMap[key] || 0) + 1;
+    });
+
+    // Lấy thông tin tên ga
+    const Station = require('../models/Station');
+    const allStations = await Station.find({}, '_id name');
+    const stationStatus = allStations.map(station => ({
+      start_station_id: station._id,
+      name: station.name,
+      count: stationCountMap[station._id.toString()] || 0
+    }));
+
+    res.json({
+      stationStatus
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
