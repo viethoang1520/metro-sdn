@@ -24,14 +24,23 @@ const purchaseTicketsByType = async (req, res) => {
     let totalAmount = 0;
     let discount = 0;
     let discountMsg = "";
-    if (
+    let isFreeForChild = false;
+
+    if (user && user.passenger_categories && user.passenger_categories.passenger_type && user.passenger_categories.passenger_type === "CHILD") {
+      isFreeForChild = true;
+      discountMsg = " (free for children under 6)";
+    }
+
+    else if (
       user &&
       user.passenger_categories &&
-      user.passenger_categories.discount&& user.passenger_categories.status == "APPROVED"  
+      user.passenger_categories.discount && 
+      user.passenger_categories.status == "APPROVED"  
     ) {
       discount = user.passenger_categories.discount;
-      discountMsg = ` (discount ${discount}% applied)`;
+      discountMsg = ` (discount ${discount}% applied for monthly tickets)`;
     }
+    
     for (const ticket of tickets) {
       const { type, quantity } = ticket;
       if (
@@ -47,21 +56,32 @@ const purchaseTicketsByType = async (req, res) => {
           data: null,
         });
       }
+      
       let price = ticketTypes[type].price;
-      if (discount) price = price * (1 - discount / 100);
+      
+      if (isFreeForChild) {
+        price = 0;
+      }
+      else if (discount && type === "1month") {
+        price = price * (1 - discount / 100);
+      }
+      
       const ticketsToCreate = Array.from({ length: quantity }).map(() => ({
         ticket_type: {
           name: ticketTypes[type].name,
-          base_price: price,
+          base_price: ticketTypes[type].price, 
+          expiry_date: null
         },
         status: "ACTIVE",
         created_at: new Date(),
-        discount: discount || undefined,
+        discount: (isFreeForChild ? 100 : (discount && type === "1month" ? discount : 0)) || undefined,
         price: price,
       }));
+      
       allTicketsToCreate = allTicketsToCreate.concat(ticketsToCreate);
       totalAmount += price * quantity;
     }
+    
     const createdTickets = await Ticket.insertMany(allTicketsToCreate);
     const ticketIds = createdTickets.map((t) => t._id);
     const newTransaction = new Transaction({
@@ -78,18 +98,31 @@ const purchaseTicketsByType = async (req, res) => {
       { transaction_id: savedTransaction._id }
     );
 
-    const ticketsSummary = tickets.map(({ type, quantity }) => ({
-      name: ticketTypes[type]?.name || type,
-      price: ticketTypes[type]?.price || 0,
-      quantity,
-    }));
+    const ticketsSummary = tickets.map(({ type, quantity }) => {
+      let finalPrice = ticketTypes[type]?.price || 0;
+      
+      if (isFreeForChild) {
+        finalPrice = 0;
+      } else if (discount && type === "1month") {
+        finalPrice = finalPrice * (1 - discount / 100);
+      }
+      
+      return {
+        name: ticketTypes[type]?.name || type,
+        original_price: ticketTypes[type]?.price || 0,
+        price: finalPrice,
+        quantity,
+      };
+    });
+    
     return res.status(201).json({
       error: false,
       message: `Ticket purchase successful${discountMsg}`,
       data: {
         transaction: savedTransaction,
         tickets: ticketsSummary,
-        discount: discount || 0,
+        discount: isFreeForChild ? 100 : (discount || 0),
+        is_free_for_child: isFreeForChild,
       },
     });
   } catch (error) {
@@ -103,13 +136,12 @@ const purchaseTicketsByType = async (req, res) => {
 
 const purchaseTicketByRoute = async (req, res) => {
   try {
-    const { routes, userId } =
-      req.body;
+    const { routes, userId } = req.body;
     const user = await User.findById(userId);
     let ticketsToCreate = [];
     let totalAmount = 0;
-    let discount = 0;
     let ticketDetails = [];
+    let isFreeForChild = false;
 
     if (!Array.isArray(routes) || routes.length === 0) {
       return res.status(400).json({
@@ -119,28 +151,39 @@ const purchaseTicketByRoute = async (req, res) => {
       });
     }
 
+    // Kiểm tra xem user có phải là trẻ em dưới 6 tuổi không
+    if (user && user.passenger_categories && user.passenger_categories.passenger_type && user.passenger_categories.passenger_type === "CHILD") {
+      isFreeForChild = true;
+    }
+    else if (
+      user &&
+      user.passenger_categories &&
+      user.passenger_categories.discount && 
+      user.passenger_categories.status == "APPROVED"
+    ) {
+      discount = user.passenger_categories.discount;
+    }
+
     for (const route of routes) {
       const { start_station_id, end_station_id, quantity } = route;
       if (!start_station_id || !end_station_id) continue;
       const start_station = await Station.findById(start_station_id);
       const end_station = await Station.findById(end_station_id);
       if (!start_station || !end_station) continue;
+      
       const start_distance = start_station.distance;
       const end_distance = end_station.distance;
       let route_price = 0;
+      
       if (Math.abs(start_distance - end_distance) <= 7) {
         route_price = 7000;
       } else {
         route_price = Math.abs(start_distance - end_distance) * 1000;
       }
-      if (
-        user &&
-        user.passenger_categories &&
-        user.passenger_categories.discount && user.passenger_categories.status == "APPROVED"
-      ) {
-        discount = user.passenger_categories.discount;
-        route_price = route_price * (1 - discount / 100);
-      }
+      
+      if (isFreeForChild) {
+        route_price = 0;
+      }   
       const qty = quantity;
       for (let i = 0; i < qty; i++) {
         ticketsToCreate.push({
@@ -150,13 +193,17 @@ const purchaseTicketByRoute = async (req, res) => {
           route_price,
           status: "ACTIVE",
           created_at: new Date(),
-          discount: discount || 0,
+          discount: isFreeForChild ? 100 : 0,
           price: route_price,
         });
       }
+      
       ticketDetails.push({
         start_station_name: start_station.name,
         end_station_name: end_station.name,
+        original_price: isFreeForChild ? 
+          (Math.abs(start_distance - end_distance) <= 7 ? 7000 : Math.abs(start_distance - end_distance) * 1000) : 
+          route_price,
         price: route_price,
         quantity: qty,
       });
@@ -170,6 +217,7 @@ const purchaseTicketByRoute = async (req, res) => {
         data: null,
       });
     }
+    
     const createdTickets = await Ticket.insertMany(ticketsToCreate);
     const ticketIds = createdTickets.map((t) => t._id);
     const newTransaction = new Transaction({
@@ -180,6 +228,7 @@ const purchaseTicketByRoute = async (req, res) => {
       status: "PENDING",
     });
     const savedTransaction = await newTransaction.save();
+    
     await Ticket.updateMany(
       { _id: { $in: ticketIds } },
       { transaction_id: savedTransaction._id }
@@ -190,18 +239,24 @@ const purchaseTicketByRoute = async (req, res) => {
         /^Ga /,
         ""
       )} - ${item.end_station_name.replace(/^Ga /, "")}`,
+      original_price: item.original_price,
       price: item.price,
       quantity: item.quantity,
     }));
+    
+    let message = "Route ticket purchase successful";
+    if (isFreeForChild) {
+      message += " (free for children under 6)";
+    }
+    
     return res.status(201).json({
       errorCode: 0,
-      message: discount
-        ? `Route ticket purchase successful (discount ${discount}% applied)`
-        : "Route ticket purchase successful",
+      message: message,
       data: {
         transaction: savedTransaction,
         tickets: replacedTicket,
-        discount: discount || 0,
+        discount: isFreeForChild ? 100 : 0,
+        is_free_for_child: isFreeForChild,
       },
     });
   } catch (error) {
