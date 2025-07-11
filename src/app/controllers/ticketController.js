@@ -2,6 +2,7 @@ const httpStatus = require("http-status");
 const Ticket = require("../models/Ticket");
 const Transaction = require("../models/Transaction");
 const Station = require("../models/Station");
+const { calculateExpiryDate } = require("../../utils/timeUtils");
 const ErrorCode = {
   OK: "SUCCESS",
   INTERNAL_SERVER_ERROR: "INTERNAL_SERVER_ERROR",
@@ -211,33 +212,56 @@ const getActiveTicketsByUserId = async (req, res) => {
 const checkIn = async (req, res) => {
   try {
     const { ticketId, stationId } = req.body;
+
     if (!ticketId) {
       return res.json({
         errorCode: ErrorCode.VALIDATION_ERROR,
         message: "ticketId is required",
       });
-    };
+    }
+
     const ticket = await Ticket.findById(ticketId);
     if (!ticket) {
       return res.json({
         errorCode: ErrorCode.TICKET_NOT_FOUND,
         message: "Ticket not found",
       });
-    };
+    }
+
     if (ticket.status !== "ACTIVE") {
       return res.json({
         errorCode: ErrorCode.VALIDATION_ERROR,
         message: "Ticket is not active or already checked in",
       });
-    };
-    if(ticket.start_station_id.toString() !== stationId) {
-      return res.json({
-        errorCode: ErrorCode.VALIDATION_ERROR,
-        message: "Ticket start station does not match the check-in station",
-      });
-    };
-    ticket.status = "CHECKED_IN";
+    }
+
+    if (ticket.ticket_type === null) {
+      if (ticket.start_station_id.toString() !== stationId) {
+        return res.json({
+          errorCode: ErrorCode.VALIDATION_ERROR,
+          message: "Ticket start station does not match the check-in station",
+        });
+      }
+      ticket.status = "CHECKED_IN"; 
+    }
+
+    if (ticket.ticket_type !== null) {
+      if (!ticket.ticket_type.expiry_date) {
+        ticket.ticket_type.expiry_date = calculateExpiryDate(ticket.ticket_type.name);
+      } else {
+        const now = new Date();
+        const expiry = new Date(ticket.ticket_type.expiry_date);
+        if (now > expiry) {
+          return res.json({
+            errorCode: ErrorCode.VALIDATION_ERROR,
+            message: "Ticket has expired",
+          });
+        }
+      }
+    }
+
     await ticket.save();
+
     res.json({
       httpStatus: httpStatus.OK,
       errorCode: ErrorCode.OK,
@@ -253,51 +277,55 @@ const checkIn = async (req, res) => {
   }
 };
 
-
 const checkOut = async (req, res) => {
   try {
     const { ticketId, stationId } = req.body;
+
     if (!ticketId) {
       return res.json({
         errorCode: ErrorCode.VALIDATION_ERROR,
         message: "ticketId is required",
       });
     }
+
     const ticket = await Ticket.findById(ticketId);
     if (!ticket) {
       return res.json({
         errorCode: ErrorCode.TICKET_NOT_FOUND,
         message: "Ticket not found",
       });
-    };
+    }
+
     if (ticket.status !== "CHECKED_IN") {
       return res.json({
         errorCode: ErrorCode.VALIDATION_ERROR,
         message: "Ticket is not checked in or already checked out",
       });
-    };
-    if(ticket.end_station_id.toString() !== stationId) {
-      return res.json({
-        errorCode: ErrorCode.VALIDATION_ERROR,
-        message: "Ticket end station does not match the check-out station",
-      });
-    };
-    ticket.status = "CHECKED_OUT";
-    await ticket.save();
-    res.status(200).json({
-      httpStatus: httpStatus.OK,
+    }
+    if (ticket.ticket_type === null) {
+      if (ticket.end_station_id.toString() !== stationId) {
+        return res.json({
+          errorCode: ErrorCode.VALIDATION_ERROR,
+          message: "Ticket end station does not match the check-out station",
+        });
+      }
+
+      ticket.status = "CHECKED_OUT";
+      await ticket.save();
+    }
+    res.json({
       errorCode: ErrorCode.OK,
       message: "Check-out successful",
       data: ticket,
     });
   } catch (error) {
-    res.status(500).json({
-      httpStatus: httpStatus.INTERNAL_SERVER_ERROR,
+    res.json({
       errorCode: ErrorCode.INTERNAL_SERVER_ERROR,
       message: error.message,
     });
   }
 };
+
 
 module.exports = {
   getAllTickets,
