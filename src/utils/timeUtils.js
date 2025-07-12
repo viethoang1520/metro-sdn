@@ -32,4 +32,18 @@ function getTimeStringNow() {
      return `${hours}:${minutes}`
 }
 
-module.exports = { generateTime, convertDateToString, timeToMinutes, getStringToday, getTimeStringNow }
+function calculateExpiryDate (ticketType) {
+     const now = new Date()
+     if (ticketType === 'Vé ngày') {
+         return new Date(now.getTime() + 24 * 60 * 60 * 1000)
+     } else if (ticketType === 'Vé 3 ngày') {
+         return new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
+     } else if (ticketType === 'Vé tháng') {
+         const expiryDate = new Date(now)
+         expiryDate.setMonth(expiryDate.getMonth() + 1)
+         return expiryDate
+     }
+     return null
+}
+
+module.exports = { generateTime, convertDateToString, timeToMinutes, getStringToday, getTimeStringNow,calculateExpiryDate }
