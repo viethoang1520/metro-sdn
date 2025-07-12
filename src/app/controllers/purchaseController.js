@@ -22,6 +22,7 @@ const purchaseTicketsByType = async (req, res) => {
     const user = await User.findById(userId);
     let allTicketsToCreate = [];
     let totalAmount = 0;
+    let originPrice = 0; 
     let discount = 0;
     let discountMsg = "";
     let isFreeForChild = false;
@@ -61,6 +62,9 @@ const purchaseTicketsByType = async (req, res) => {
       }
 
       let price = ticketTypes[type].price;
+      const originalPrice = ticketTypes[type].price;
+
+      originPrice += originalPrice * quantity;
 
       if (isFreeForChild) {
         price = 0;
@@ -136,6 +140,7 @@ const purchaseTicketsByType = async (req, res) => {
       data: {
         transaction: savedTransaction,
         tickets: ticketsSummary,
+        origin_price: Math.round(originPrice),
         discount: isFreeForChild ? 100 : discount || 0,
         is_free_for_child: isFreeForChild,
       },
@@ -155,6 +160,7 @@ const purchaseTicketByRoute = async (req, res) => {
     const user = await User.findById(userId);
     let ticketsToCreate = [];
     let totalAmount = 0;
+    let originPrice = 0; 
     let ticketDetails = [];
     let isFreeForChild = false;
 
@@ -192,17 +198,23 @@ const purchaseTicketByRoute = async (req, res) => {
       const start_distance = start_station.distance;
       const end_distance = end_station.distance;
       let route_price = 0;
+      let original_route_price = 0;
 
       if (Math.abs(start_distance - end_distance) <= 7) {
         route_price = 7000;
+        original_route_price = 7000;
       } else {
         route_price = Math.abs(start_distance - end_distance) * 1000;
+        original_route_price = Math.abs(start_distance - end_distance) * 1000;
       }
+
+      const qty = quantity;
+      originPrice += original_route_price * qty;
 
       if (isFreeForChild) {
         route_price = 0;
       }
-      const qty = quantity;
+      
       for (let i = 0; i < qty; i++) {
         ticketsToCreate.push({
           ticket_type: null,
@@ -219,11 +231,7 @@ const purchaseTicketByRoute = async (req, res) => {
       ticketDetails.push({
         start_station_name: start_station.name,
         end_station_name: end_station.name,
-        original_price: isFreeForChild
-          ? Math.abs(start_distance - end_distance) <= 7
-            ? 7000
-            : Math.abs(start_distance - end_distance) * 1000
-          : route_price,
+        original_price: original_route_price,
         price: route_price,
         quantity: qty,
       });
@@ -282,6 +290,7 @@ const purchaseTicketByRoute = async (req, res) => {
       data: {
         transaction: savedTransaction,
         tickets: replacedTicket,
+        origin_price: Math.round(originPrice),
         discount: isFreeForChild ? 100 : 0,
         is_free_for_child: isFreeForChild,
       },
