@@ -115,10 +115,33 @@ const updateTimetableById = async (req, res) => {
      try {
           const { id: _id } = req.params
           const { start_time } = req.body
+          const listTimetable = await Timetable.find({})
           const timetable = await Timetable.find({ _id })
           if (!timetable) return res.json({ error_code: 1, message: 'Không tìm thấy.' })
+          let indexOfTimetable = null
+          listTimetable.forEach((timetable, index) => {
+               if (timetable._id.toString() === _id) {
+                    indexOfTimetable = index
+               }
+          })
+          console.log(indexOfTimetable);
+          if (indexOfTimetable === null) return res.json({ error_code: 1, message: 'Đã xảy ra lỗi.' })
+          const nextStartTime = timeToMinutes(listTimetable[indexOfTimetable + 1].start_time)
+          const currentStartTime = timeToMinutes(start_time)
+
+          if (indexOfTimetable !== 0) {
+               const prevStartTime = timeToMinutes(listTimetable[indexOfTimetable - 1].start_time)
+               if (currentStartTime <= prevStartTime)
+                    return res.json({ error_code: 1, message: 'GIờ cập nhật không được nhỏ hơn chuyến trước đó.' })
+          }
+          
+          if (indexOfTimetable !== listTimetable.length - 1) {
+               if (currentStartTime >= nextStartTime)
+                    return res.json({ error_code: 1, message: 'Giờ cập nhật không được vượt quá chuyến tiếp theo.' })
+          }
+
           await Timetable.updateOne(
-               { _id: id },
+               { _id },
                { $set: { start_time } }
           )
           return res.json({ error_code: 0, message: 'Cập nhật thành công.' })
