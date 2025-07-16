@@ -151,32 +151,28 @@ const getActiveTicketsByUserId = async (req, res) => {
 
     const transactionIds = transactions.map((tran) => tran._id);
 
-    // Lấy tất cả vé ACTIVE từ các transaction này
     const allTickets = await Ticket.find({
       transaction_id: { $in: transactionIds },
       status: "ACTIVE",
     });
 
-    // Hàm kiểm tra vé còn hoạt động
     const isActiveTicket = (ticket) => {
       const isTicketTypeBased = ticket.ticket_type?.name;
 
       if (isTicketTypeBased) {
-        // Vé loại
         const expiry = ticket.ticket_type.expiry_date;
-        return expiry === null || new Date(expiry) >= now;
+        return expiry === null || new Date(expiry) > now;
       } else {
-        // Vé tuyến
-        return ticket.status !== "CHECK_OUT" || new Date(ticket.createdAt) >= twentyFourHoursAgo;
+        return (
+          ticket.status !== "CHECKED_OUT" &&
+          new Date(ticket.createdAt) >= twentyFourHoursAgo
+        );
       }
     };
 
-    // Lọc các vé còn hoạt động
-    const activeTickets = allTickets.filter((ticket) =>
-      isActiveTicket(ticket)
-    );
 
-    // Lấy danh sách stationIds để map tên
+    const activeTickets = allTickets.filter((ticket) => isActiveTicket(ticket));
+
     const stationIds = activeTickets
       .flatMap((ticket) => [ticket.start_station_id, ticket.end_station_id])
       .filter((id) => id);
@@ -188,7 +184,6 @@ const getActiveTicketsByUserId = async (req, res) => {
       stationMap.set(station._id.toString(), station.name);
     });
 
-    // Bổ sung thông tin tên station và phân loại vé
     const enrichedTickets = activeTickets.map((ticket) => {
       const ticketCategory = ticket.ticket_type?.name
         ? "Vé theo loại"
@@ -220,7 +215,6 @@ const getActiveTicketsByUserId = async (req, res) => {
     });
   }
 };
-
 
 const checkIn = async (req, res) => {
   try {
