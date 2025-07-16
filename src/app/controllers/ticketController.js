@@ -154,11 +154,13 @@ const getActiveTicketsByUserId = async (req, res) => {
       status: { $in: ["ACTIVE"] },
       $or: [
         {
-          "ticket_type.expiry_date": { $exists: true, $gte: now },
+          "ticket_type.expiry_date": { $gte: now },
         },
         {
           "ticket_type.expiry_date": { $exists: false },
-          createdAt: { $gte: twentyFourHoursAgo },
+        },
+        {
+          "ticket_type.expiry_date": null,
         },
       ],
     });
@@ -208,7 +210,6 @@ const getActiveTicketsByUserId = async (req, res) => {
   }
 };
 
-
 const checkIn = async (req, res) => {
   try {
     const { ticketId, stationId } = req.body;
@@ -242,12 +243,14 @@ const checkIn = async (req, res) => {
           message: "Ticket start station does not match the check-in station",
         });
       }
-      ticket.status = "CHECKED_IN"; 
+      ticket.status = "CHECKED_IN";
     }
 
     if (ticket.ticket_type !== null) {
       if (!ticket.ticket_type.expiry_date) {
-        ticket.ticket_type.expiry_date = calculateExpiryDate(ticket.ticket_type.name);
+        ticket.ticket_type.expiry_date = calculateExpiryDate(
+          ticket.ticket_type.name
+        );
       } else {
         const now = new Date();
         const expiry = new Date(ticket.ticket_type.expiry_date);
@@ -325,7 +328,6 @@ const checkOut = async (req, res) => {
     });
   }
 };
-
 
 module.exports = {
   getAllTickets,
