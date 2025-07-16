@@ -39,9 +39,9 @@ const getScheduleByStartTime = async (req, res) => {
                }
           ]))
 
-          if (!currentRoute) {
-               return res.json({ error_code: 1, msg: 'Route not found' })
-          }
+          if (!currentRoute)
+               return res.json({ error_code: 1, message: 'Không tìm thấy tuyến' })
+
           const arrivalTimeList = []
           let preStationStartTime = currentRoute[0].start_time.start_time
           for (let index = 0; index < currentRoute[0].schedule.length; index++) {
@@ -115,15 +115,40 @@ const updateTimetableById = async (req, res) => {
      try {
           const { id: _id } = req.params
           const { start_time } = req.body
+          const listTimetable = await Timetable.find({})
           const timetable = await Timetable.find({ _id })
           if (!timetable) return res.json({ error_code: 1, message: 'Không tìm thấy.' })
-          await Timetable.updateOne(
-               { _id: id },
+          let indexOfTimetable = null
+          listTimetable.forEach((timetable, index) => {
+               if (timetable._id.toString() === _id) {
+                    indexOfTimetable = index
+               }
+          })
+          console.log(indexOfTimetable);
+          if (indexOfTimetable === null) return res.json({ error_code: 1, message: 'Đã xảy ra lỗi.' })
+          const nextStartTime = timeToMinutes(listTimetable[indexOfTimetable + 1].start_time)
+          const currentStartTime = timeToMinutes(start_time)
+
+          if (indexOfTimetable !== 0) {
+               const prevStartTime = timeToMinutes(listTimetable[indexOfTimetable - 1].start_time)
+               if (currentStartTime <= prevStartTime)
+                    return res.json({ error_code: 1, message: 'GIờ cập nhật không được nhỏ hơn chuyến trước đó.' })
+          }
+
+          if (indexOfTimetable !== listTimetable.length - 1) {
+               if (currentStartTime >= nextStartTime)
+                    return res.json({ error_code: 1, message: 'Giờ cập nhật không được vượt quá chuyến tiếp theo.' })
+          }
+
+          const updateData = await Timetable.updateOne(
+               { _id },
                { $set: { start_time } }
           )
+          console.log(updateData)
           return res.json({ error_code: 0, message: 'Cập nhật thành công.' })
      } catch (error) {
           console.log(error.message)
+          return res.json({ error_code: 1, message: 'Server error.' })
      }
 }
 
@@ -150,7 +175,7 @@ const createBulkRoutes = async (direction) => {
           const allTimetables = await Timetable.find({})
           const listRoutes = []
           if (!allTimetables) {
-               return res.status(404).json({ 'message': 'Not found' })
+               return res.json({ error_code: 1, message: 'Lỗi tạo: không tìm thấy danh sách timetable.' })
           }
           for (let index = 0; index < allTimetables.length; index++) {
                listRoutes.push({
@@ -161,10 +186,10 @@ const createBulkRoutes = async (direction) => {
                     status: 1
                })
           }
-          console.log(listRoutes);
           const route = await Route.insertMany(listRoutes)
      } catch (error) {
-          console.log(error.message);
+          console.log(error.message)
+          return res.json({ error_code: 1, message: 'Server error.' })
      }
 }
 
@@ -186,10 +211,10 @@ const createBulkTimetables = async (req, res) => {
                await Timetable.insertMany(timetableList)
           }
           createBulkRoutes(direction)
-          return res.status(201).json({ msg: 'ok' })
+          return res.status(201).json({ error_code: 0, message: 'Tạo thành công.' })
      } catch (error) {
-          res.redirect('/schedule?success=false')
           console.log(error.message)
+          return res.json({ error_code: 500, message: 'Server error' })
      }
 }
 
