@@ -132,7 +132,6 @@ const getAllTicketsByUserId = async (req, res) => {
 const getActiveTicketsByUserId = async (req, res) => {
   try {
     const { userId } = req.params;
-    console.log(userId);
     if (!userId) {
       return res.status(400).json({
         httpStatus: httpStatus.BAD_REQUEST,
@@ -140,30 +139,41 @@ const getActiveTicketsByUserId = async (req, res) => {
         message: "User ID is required",
       });
     }
+
     const now = new Date();
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    // Lấy tất cả transaction đã thanh toán của user
     const transactions = await Transaction.find({
       user_id: userId,
       status: "PAID",
     }).select("_id");
-    console.log(transactions);
+
     const transactionIds = transactions.map((tran) => tran._id);
 
-    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const tickets = await Ticket.find({
+    const allTickets = await Ticket.find({
       transaction_id: { $in: transactionIds },
-      status: { $in: ["ACTIVE"] },
-      $or: [
-        {
-          "ticket_type.expiry_date": { $exists: true, $gte: now },
-        },
-        {
-          "ticket_type.expiry_date": { $exists: false },
-          createdAt: { $gte: twentyFourHoursAgo },
-        },
-      ],
+      status: "ACTIVE",
     });
 
-    const stationIds = tickets
+    const isActiveTicket = (ticket) => {
+      const isTicketTypeBased = ticket.ticket_type?.name;
+
+      if (isTicketTypeBased) {
+        const expiry = ticket.ticket_type.expiry_date;
+        return expiry === null || new Date(expiry) > now;
+      } else {
+        return (
+          ticket.status !== "CHECKED_OUT" &&
+          new Date(ticket.createdAt) >= twentyFourHoursAgo
+        );
+      }
+    };
+
+
+    const activeTickets = allTickets.filter((ticket) => isActiveTicket(ticket));
+
+    const stationIds = activeTickets
       .flatMap((ticket) => [ticket.start_station_id, ticket.end_station_id])
       .filter((id) => id);
 
@@ -174,13 +184,11 @@ const getActiveTicketsByUserId = async (req, res) => {
       stationMap.set(station._id.toString(), station.name);
     });
 
-    const enrichedTickets = tickets.map((ticket) => {
-      let ticketCategory = "";
-      if (ticket.ticket_type && ticket.ticket_type.name) {
-        ticketCategory = "Vé theo loại";
-      } else {
-        ticketCategory = "Vé theo tuyến";
-      }
+    const enrichedTickets = activeTickets.map((ticket) => {
+      const ticketCategory = ticket.ticket_type?.name
+        ? "Vé theo loại"
+        : "Vé theo tuyến";
+
       return {
         ...ticket._doc,
         start_station_name: ticket.start_station_id
@@ -207,7 +215,6 @@ const getActiveTicketsByUserId = async (req, res) => {
     });
   }
 };
-
 
 const checkIn = async (req, res) => {
   try {
@@ -242,12 +249,14 @@ const checkIn = async (req, res) => {
           message: "Ticket start station does not match the check-in station",
         });
       }
-      ticket.status = "CHECKED_IN"; 
+      ticket.status = "CHECKED_IN";
     }
 
     if (ticket.ticket_type !== null) {
       if (!ticket.ticket_type.expiry_date) {
-        ticket.ticket_type.expiry_date = calculateExpiryDate(ticket.ticket_type.name);
+        ticket.ticket_type.expiry_date = calculateExpiryDate(
+          ticket.ticket_type.name
+        );
       } else {
         const now = new Date();
         const expiry = new Date(ticket.ticket_type.expiry_date);
@@ -325,7 +334,6 @@ const checkOut = async (req, res) => {
     });
   }
 };
-
 
 module.exports = {
   getAllTickets,
