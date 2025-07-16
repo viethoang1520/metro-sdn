@@ -151,13 +151,29 @@ const getActiveTicketsByUserId = async (req, res) => {
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const tickets = await Ticket.find({
       transaction_id: { $in: transactionIds },
-      status: { $in: ["ACTIVE"] },
+      status: "ACTIVE",
       $or: [
         {
-          "ticket_type.expiry_date": { $gte: now },
+          $and: [
+            { "ticket_type.name": { $exists: false } },
+            {
+              $or: [
+                { status: { $ne: "CHECK_OUT" } },
+                { createdAt: { $gte: twentyFourHoursAgo } },
+              ],
+            },
+          ],
         },
         {
-          "ticket_type.expiry_date": null,
+          $and: [
+            { "ticket_type.name": { $exists: true } },
+            {
+              $or: [
+                { "ticket_type.expiry_date": null },
+                { "ticket_type.expiry_date": { $gte: now } },
+              ],
+            },
+          ],
         },
       ],
     });
