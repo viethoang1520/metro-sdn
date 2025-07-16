@@ -157,9 +157,6 @@ const getActiveTicketsByUserId = async (req, res) => {
           "ticket_type.expiry_date": { $gte: now },
         },
         {
-          "ticket_type.expiry_date": { $exists: false },
-        },
-        {
           "ticket_type.expiry_date": null,
         },
       ],
