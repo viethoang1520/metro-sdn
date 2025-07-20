@@ -127,3 +127,52 @@ exports.listExemptionApplications = async (req, res) => {
     });
   }
 };
+
+exports.getUserExemptionApplications = async (req, res) => {
+  try {
+    const userId = req.id 
+    console.log(userId)
+    const user = await User.findById(userId)
+    if (!user) {
+      return res.status(404).json({
+        errorCode: 1,
+        message: "User not found",
+      });
+    }
+    const applications = await ExemptionApplication.find({user_id: userId, status: "PENDING"})
+    res.json({
+      errorCode: 0,
+      applications,
+      message: "User exemption applications fetched successfully",
+    });
+  } catch (err) {
+    res.status(500).json({
+      errorCode: 1,
+      message: err.message || "An error occurred while fetching user applications",
+    });
+  }
+};
+
+exports.getExemptionApplicationDetails = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    const applicationDetails = await ExemptionApplication.findById(applicationId)
+    if (!applicationDetails) {
+      return res.status(404).json({
+        errorCode: 1,
+        message: "Exemption application not found",
+        data: null,
+      });
+    }
+    res.json({
+      errorCode: 0,
+      applicationDetails,
+      message: "Exemption application details fetched successfully",
+    });
+  } catch (err) {
+    res.status(500).json({
+      errorCode: 1,
+      message: err.message || "An error occurred while fetching application details",
+    });
+  }
+}
