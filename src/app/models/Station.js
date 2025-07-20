@@ -11,11 +11,11 @@ const Station = new mongoose.Schema({
     },
     prev_station: {
         type: String,
-        required: true
+        required: false
     },
     next_station: {
         type: String,
-        required: true
+        required: false
     },
     distance: {
         type: Number,
