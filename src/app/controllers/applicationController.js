@@ -67,6 +67,40 @@ exports.rejectExemptionApplication = async (req, res) => {
     }
     app.status = "REJECTED";
     await app.save();
+    if (app.user_type === "STUDENT") discount = 50;
+    else discount = 100;
+    await User.findByIdAndUpdate(app.user_id, {
+      passenger_categories: {
+        passenger_type: app.user_type,
+        discount,
+        expiry_date: null,
+        status: "REJECTED",
+      },
+    });
+    const latestApprovedApp = await ExemptionApplication.findOne({
+      user_id: app.user_id,
+      status: 'APPROVED'
+    }).sort({ createdAt: -1 });
+
+    if (!latestApprovedApp) {
+      await User.findByIdAndUpdate(app.user_id, {
+        passenger_categories: {
+          passenger_type: '',
+          discount: 0,
+          expiry_date: null,
+          status: "",
+        },
+      });
+    } else { 
+      await User.findByIdAndUpdate(app.user_id, {
+        passenger_categories: {
+          passenger_type: latestApprovedApp.user_type,
+          discount: latestApprovedApp.user_type === "STUDENT" ? 50 : 100,
+          expiry_date: latestApprovedApp.expiry_date,
+          status: "APPROVED",
+        }
+      });
+    }
     return res.json({
       errorCode: 0,
       message: "Application rejected successfully",
@@ -139,7 +173,7 @@ exports.getUserExemptionApplications = async (req, res) => {
         message: "User not found",
       });
     }
-    const applications = await ExemptionApplication.find({user_id: userId, status: "PENDING"})
+    const applications = await ExemptionApplication.find({user_id: userId}).sort({ createdAt: -1 })
     res.json({
       errorCode: 0,
       applications,
