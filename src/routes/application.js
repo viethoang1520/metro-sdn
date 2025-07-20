@@ -7,6 +7,6 @@ router.post('/approve', application.approveExemptionApplication);
 router.post('/reject', application.rejectExemptionApplication);
 router.get('/list', application.listExemptionApplications);
 router.get('/details/:applicationId', AuthenticateJWT, application.getExemptionApplicationDetails);
-router.get('/user/:userId', application.getUserExemptionApplications);
+router.get('/me', AuthenticateJWT, application.getUserExemptionApplications);
 
 module.exports = router; 
