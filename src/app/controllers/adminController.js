@@ -192,3 +192,58 @@ exports.getStationStatusToday = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 }; 
+
+// API: Admin disable (soft delete) user
+exports.disableUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { status: 0 }, // cập nhật về số 0
+      { new: true }
+    );
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json({ message: 'User disabled successfully', user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}; 
+
+// API: Admin enable (activate) user
+exports.enableUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { status: 1 }, // cập nhật về số 1
+      { new: true }
+    );
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json({ message: 'User enabled successfully', user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}; 
+
+// API: Lấy danh sách user cho admin
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({}, 'username full_name email passenger_categories.status passenger_categories.passenger_type status');
+    // Lấy loại hành khách từ passenger_categories.passenger_type nếu có
+    const mappedUsers = users.map(u => ({
+      _id: u._id,
+      username: u.username,
+      full_name: u.full_name,
+      email: u.email,
+      passenger_type: u.passenger_categories && u.passenger_categories.passenger_type ? u.passenger_categories.passenger_type : '-',
+      status: u.status
+    }));
+    res.json({ users: mappedUsers });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}; 
