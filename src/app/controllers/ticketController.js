@@ -143,7 +143,7 @@ const getActiveTicketsByUserId = async (req, res) => {
     const now = new Date();
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-    // Lấy tất cả transaction đã thanh toán của user
+
     const transactions = await Transaction.find({
       user_id: userId,
       status: "PAID",
