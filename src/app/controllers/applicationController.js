@@ -67,6 +67,40 @@ exports.rejectExemptionApplication = async (req, res) => {
     }
     app.status = "REJECTED";
     await app.save();
+    if (app.user_type === "STUDENT") discount = 50;
+    else discount = 100;
+    await User.findByIdAndUpdate(app.user_id, {
+      passenger_categories: {
+        passenger_type: app.user_type,
+        discount,
+        expiry_date: null,
+        status: "REJECTED",
+      },
+    });
+    const latestApprovedApp = await ExemptionApplication.findOne({
+      user_id: app.user_id,
+      status: 'APPROVED'
+    }).sort({ createdAt: -1 });
+
+    if (!latestApprovedApp) {
+      await User.findByIdAndUpdate(app.user_id, {
+        passenger_categories: {
+          passenger_type: '',
+          discount: 0,
+          expiry_date: null,
+          status: "",
+        },
+      });
+    } else { 
+      await User.findByIdAndUpdate(app.user_id, {
+        passenger_categories: {
+          passenger_type: latestApprovedApp.user_type,
+          discount: latestApprovedApp.user_type === "STUDENT" ? 50 : 100,
+          expiry_date: latestApprovedApp.expiry_date,
+          status: "APPROVED",
+        }
+      });
+    }
     return res.json({
       errorCode: 0,
       message: "Application rejected successfully",
@@ -127,3 +161,52 @@ exports.listExemptionApplications = async (req, res) => {
     });
   }
 };
+
+exports.getUserExemptionApplications = async (req, res) => {
+  try {
+    const userId = req.id 
+    console.log(userId)
+    const user = await User.findById(userId)
+    if (!user) {
+      return res.status(404).json({
+        errorCode: 1,
+        message: "User not found",
+      });
+    }
+    const applications = await ExemptionApplication.find({user_id: userId}).sort({ createdAt: -1 })
+    res.json({
+      errorCode: 0,
+      applications,
+      message: "User exemption applications fetched successfully",
+    });
+  } catch (err) {
+    res.status(500).json({
+      errorCode: 1,
+      message: err.message || "An error occurred while fetching user applications",
+    });
+  }
+};
+
+exports.getExemptionApplicationDetails = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    const applicationDetails = await ExemptionApplication.findById(applicationId)
+    if (!applicationDetails) {
+      return res.status(404).json({
+        errorCode: 1,
+        message: "Exemption application not found",
+        data: null,
+      });
+    }
+    res.json({
+      errorCode: 0,
+      applicationDetails,
+      message: "Exemption application details fetched successfully",
+    });
+  } catch (err) {
+    res.status(500).json({
+      errorCode: 1,
+      message: err.message || "An error occurred while fetching application details",
+    });
+  }
+}
