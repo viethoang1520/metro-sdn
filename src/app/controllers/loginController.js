@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const loginUser = async (req, res) => {
   const { username, password } = req.body
-  const user = await User.findOne({ username })
+  const user = await User.findOne({ username, status: 1 })
   if (!user) {
     return res.json({ "error_code": 1, "message": "Người dùng chưa được đăng ký" })
   }
