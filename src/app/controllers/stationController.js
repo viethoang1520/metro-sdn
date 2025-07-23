@@ -257,7 +257,24 @@ exports.updateStationNameById = async (req, res) => {
     if (!station) {
       return res.json({ errorCode: 1, message: "Station not found" });
     }
-
+    listStation = await Station.find({ status: 1 });
+    if (listStation.some((s) => s.name === name)) {
+      return res.json({ errorCode: 1, message: "Station name already exists" });
+    }
+    if (station.prev_station) {
+      const prevStation = await Station.findOne({ name: station.prev_station });
+      if (prevStation) {
+        prevStation.next_station = name;
+        await prevStation.save();
+      }
+    }
+    if (station.next_station) {
+      const nextStation = await Station.findOne({ name: station.next_station });
+      if (nextStation) {
+        nextStation.prev_station = name;
+        await nextStation.save();
+      }
+    }
     station.name = name;
     await station.save();
 
