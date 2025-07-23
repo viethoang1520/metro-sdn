@@ -2,7 +2,7 @@ const Station = require("../models/Station");
 
 exports.getAllStations = async (req, res) => {
   try {
-    const stations = await Station.find({ status: 1 });
+    const stations = await Station.find({ status: 1 }).sort({ distance: 1 });
     res.json({ errorCode: 0, data: stations });
   } catch (error) {
     res.json({
@@ -244,6 +244,24 @@ exports.updateStationStatusById = async (req, res) => {
       errorCode: 0,
       message: `Station "${station.name}" status updated to ${status}`,
     });
+  } catch (error) {
+    res.json({ errorCode: 1, error: error.message });
+  }
+};
+
+exports.updateStationNameById = async (req, res) => {
+  try {
+    const { name, id } = req.body;
+
+    const station = await Station.findById(id);
+    if (!station) {
+      return res.json({ errorCode: 1, message: "Station not found" });
+    }
+
+    station.name = name;
+    await station.save();
+
+    res.json({ errorCode: 0, message: `Station name updated to "${name}"` });
   } catch (error) {
     res.json({ errorCode: 1, error: error.message });
   }
