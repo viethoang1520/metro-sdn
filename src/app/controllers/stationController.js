@@ -283,3 +283,12 @@ exports.updateStationNameById = async (req, res) => {
     res.json({ errorCode: 1, error: error.message });
   }
 };
+
+exports.getActiveAndInactiveStations = async (req, res) => {
+  try {
+    const allStations = await Station.find().sort({ distance: 1 });
+    res.json({ errorCode: 0, stations: allStations });
+  } catch (error) {
+    res.json({ errorCode: 1, error: error.message });
+  }
+};
