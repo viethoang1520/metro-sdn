@@ -5,6 +5,6 @@ const stationController = require('../app/controllers/stationController');
 router.get('/', stationController.getAllStations);
 router.post('/', stationController.createStation);
 router.patch('/:id', stationController.updateStationStatusById);
-router.put('/:id', stationController.updateStationNameById);
+router.put('/', stationController.updateStationNameById);
 
 module.exports = router;
