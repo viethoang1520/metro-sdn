@@ -5,6 +5,11 @@ const applyDiscountForStudent = async (req, res) => {
   try {
     const user_id = req.id
     const { discount, expiry_date, cccd } = req.body
+
+    const existingCCCD = await User.findOne({ cccd: cccd })
+    if (existingCCCD) {
+      return res.json({ "error_code": 5, "message": "CCCD đã được sử dụng" })
+    }
     const existingExemptionApplication = await ExemptionApplication.findOne({ user_id: user_id, status: 'PENDING' })
     if (existingExemptionApplication) {
       return res.json({ "error_code": 4, "message": "Bạn đã đăng ký một đơn trước đó" })
@@ -48,6 +53,10 @@ const applyFreeTicket = async (req, res) => {
   try {
     const user_id = req.id
     let { user_type, expiry_date, cccd } = req.body
+    const existingCCCD = await User.findOne({ cccd: cccd })
+    if (existingCCCD) {
+      return res.json({ "error_code": 5, "message": "CCCD đã được sử dụng" })
+    }
     const existingExemptionApplication = await ExemptionApplication.findOne({ user_id: user_id, status: 'PENDING' })
     if (existingExemptionApplication) {
       return res.json({ "error_code": 4, "message": "Bạn đã đăng ký một đơn trước đó" })
